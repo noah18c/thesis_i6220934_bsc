@@ -1,8 +1,8 @@
-Thesis Title: Time Series Prediction Models Using Tensor Decomposition
-Description
+# Thesis Title: Time Series Prediction Models Using Tensor Decomposition
+## Description
 This repository contains all the materials related to my thesis on "Time Series Prediction Models Using Tensor Decomposition," which explores the efficacy and interpretability of tensor decomposition techniques in time series prediction models. The core objective is to compare tensor-based models with traditional matrix-based models in handling complex datasets like financial markets.
 
-Objectives
+## Objectives
 To define and implement a tensor decomposition-based model for time series prediction.
 To conduct a comparative analysis of tensor-based and matrix-based models.
 To evaluate the performance of these models on real-world financial market data.
@@ -18,24 +18,24 @@ Instructions to set up the environment to run the scripts:
 
 bash
 Copy code
-# Clone the repository
+## Clone the repository
 git clone https://github.com/noah18c/thesis_i6220934_bsc.git
 cd thesis_i6220934_bsc
 
-# No specific installation required for MATLAB scripts, just ensure you have a compatible MATLAB version installed.
+## No specific installation required for MATLAB scripts, just ensure you have a compatible MATLAB version installed.
 Usage
 Details on how to run the scripts and reproduce the results:
 
 bash
 Copy code
-# Navigate to the code directory
+## Navigate to the code directory
 cd code
 
-# Run the MATLAB scripts
+## Run the MATLAB scripts
 matlab -batch "run_script_name"
 Replace run_script_name with the actual name of the MATLAB script you wish to run.
 
-Dependencies
+## Dependencies
 MATLAB (R202X or later)
 Required MATLAB toolboxes:
 Statistics and Machine Learning Toolbox
@@ -43,6 +43,7 @@ Signal Processing Toolbox
 Results
 Brief description of what each script outputs and where the results can be found.
 
+## Contribution
 Fork the repo.
 Create your feature branch (git checkout -b feature/AmazingFeature).
 Commit your changes (git commit -m 'Add some AmazingFeature').

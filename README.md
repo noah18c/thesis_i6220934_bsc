@@ -1,6 +1,6 @@
 # Thesis Title: Time Series Prediction Models Using Tensor Decomposition
 ## Description
-This repository contains all the materials related to my thesis on "Time Series Prediction Models Using Tensor Decomposition," which explores the efficacy and interpretability of tensor decomposition techniques in time series prediction models. The core objective is to design a framework for prediction models using a low-rank approximation of a tensor.
+This repository contains all the materials related to my thesis on "Time Series Prediction Models Using Tensor Decomposition," which explores the efficacy and interpretability of tensor decomposition techniques in time series prediction models. The core objective is to design a framework for prediction models using a low-rank approximation (tensor decomposition) of a tensor.
 
 ## Objectives
 To define and implement a tensor decomposition-based model for time series prediction.

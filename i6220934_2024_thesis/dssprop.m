@@ -1,4 +1,4 @@
-function state_space_properties(state_space)
+function dssprop(state_space)
     A = state_space.A;
     B = state_space.B;
     C = state_space.C;

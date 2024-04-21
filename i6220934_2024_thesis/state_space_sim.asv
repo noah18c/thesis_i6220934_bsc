@@ -1,4 +1,4 @@
-function [] = state_space_sim(state_space, maxTime, input)
+function plt = state_space_plt(state_space, maxTime, input)
     A = state_space.A;
     B = state_space.B;
     C = state_space.C;
@@ -13,18 +13,18 @@ function [] = state_space_sim(state_space, maxTime, input)
       input = zeros(inputnum,1);
     end
 
-    x = zeros(statenum,maxTime);
-    y = zeros(outputnum,maxTime);
+    x = zeros(statenum,maxTime+1);
+    y = zeros(outputnum,maxTime+1);
     x(:,1) = rand(statenum,1);
     y(:,1) = C*x(:,1);
     
-    for i=2:maxTime
+    for i=2:maxTime+1
         y(:,i) = C*x(:,i-1) + D*input;
         x(:,i) = A*x(:,i-1) + B*input;
     end
     
-    plot(0:maxTime-1,y)
-    xlabel("Time until t="+ (maxTime-1)+" ");
+    plt = plot(0:maxTime,y);
+    xlabel("Time until t="+ (maxTime)+" ");
     ylabel("Output");
     title("Impulse response of state-space system with "+ statenum+ " states");
     legend('show');

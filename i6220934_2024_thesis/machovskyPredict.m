@@ -1,4 +1,4 @@
-function out = machowskyPredict(u, y, lmax, uf, delta)
+function out = machovskyPredict(u, y, lmax, uf, delta)
     t = delta; % time interval for which we will calculate the response
     T = length(u);
 
@@ -7,8 +7,10 @@ function out = machowskyPredict(u, y, lmax, uf, delta)
     % We split the input where the past inputs goes from 1 to lmax, and
     % future goes from lmax+1 to delta
     j = T - delta -lmax+1;
-    Hu = hankelizeM(u,lmax+delta);
-    Hy = hankelizeM(y,lmax+delta);
+    Hu = hankel(u(1:lmax+delta,1),u(lmax+delta:end,1));
+    %hankelizeM(u,lmax+delta);
+    %Hy = hankelizeM(y,lmax+delta);
+    Hy = hankel(y(1:lmax+delta,1),y(lmax+delta:end,1));
 
     Up = Hu(1:lmax,1:j);
     Uf = Hu(lmax+1:end,1:j);
@@ -17,7 +19,7 @@ function out = machowskyPredict(u, y, lmax, uf, delta)
 
     fu = [zeros(lmax,1);uf(1:delta,1)];
     fy_p = zeros(lmax,1);
-    out = zeros(1,t);
+    out = zeros(1,t+1);
 
 
     while t>=k*delta
@@ -25,14 +27,13 @@ function out = machowskyPredict(u, y, lmax, uf, delta)
         B = [fu; fy_p];
         gk = linsolve(A,B);
 
-        yf = Yf*gk;
-
+        yf = Yf*gk
+        
         
         fu = [fu(delta+1:end,:); u(k * delta + 1:(k+1) * delta,:)];
-        fy_p = [fy_p(delta+1:end,:);yf(delta+1:end,:)];
+        fy_p = [fy_p(delta+1:end,:);yf(:,:)];
 
         k=k+1;
-        out(k) = yf;
     end
 
 end

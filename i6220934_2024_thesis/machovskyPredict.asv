@@ -1,4 +1,4 @@
-function out = machovskyPredict(u, y, lmax, nmax, uf, delta, t)
+function yf = machovskyPredict(u, y, lmax, uf, delta, t)
     T = length(u);
 
     k = 0;
@@ -18,18 +18,15 @@ function out = machovskyPredict(u, y, lmax, nmax, uf, delta, t)
 
     fu = [zeros(lmax,1);uf(1:delta,1)];
     fy_p = zeros(lmax,1);
-    out = zeros(delta, ceil(t/delta));
+    out = zeros(1,t+1);
 
-    while t >= k*delta
-
-        disp("k = "+k);
+    while t>=k*delta
         A = [Up;Uf;Yp];
         B = [fu; fy_p];
-        gk = A \ B;
+        gk = linsolve(A,B);
 
-        yf = Yf*gk;
-
-        out(:,k+1) = yf;
+        yf = Yf*gk
+        
         
         fu = [fu(delta+1:end,:); u(k * delta + 1:(k+1) * delta,:)];
         fy_p = [fy_p(delta+1:end,:);yf(:,:)];

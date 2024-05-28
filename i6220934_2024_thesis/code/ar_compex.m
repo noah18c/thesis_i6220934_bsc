@@ -1,20 +1,23 @@
-function [best_components, all_errors_gt1_mean, all_errors_gt2_mean] = ar_compex(max_signals, num_experiments, optimal_order, components_range)
+function [best_components, all_errors_gt1_mean, all_errors_gt2_mean] = ar_compex(signal_params, max_signals, num_experiments, optimal_order, components_range)
     addpath('./tensorlab/');
     
-    % parameters for period, amplitude, and interval to be tested
+    % parameters for period, amplitude, sampling frequency (Hz), and interval to be tested
+    % example signal parameter setup (needs to have exactly 4 columns)
+    %{
     signal_params = [
-        1, 1, 100;
-        10, 1, 100;
-        1, 100, 100;
-        10, 100, 100;
-        1, 1, 200;
-        10, 1, 200;
-        1, 100, 200;
-        10, 100, 200
+        1, 1, 1, 100;
+        10, 1, 1, 100;
+        1, 100, 1, 100;
+        10, 100, 1, 100;
+        1, 1, 1, 200;
+        10, 1, 1, 200;
+        1, 100, 1, 200;
+        10, 100, 1, 200
     ];
+    %}
     
     % Max signals parameter
-    max_signals_param = 1;  % You can adjust this as needed
+    max_signals_param = size(signal_params,1);  % You can adjust this as needed
 
     noise_option = 1;
     num_predict = 1;
@@ -79,8 +82,10 @@ function [best_components, all_errors_gt1_mean, all_errors_gt2_mean] = ar_compex
                     
                     % Perform the experiment
                     for experiment = 1:num_experiments 
-                        if mod(experiment, 10) == 0
-                            disp("iter " + experiment);
+                        if mod(experiment,round(num_experiments/4))==0 && mod(experiment,2) == 0
+                            disp("iter "+experiment);
+                        elseif mod(experiment,round(num_experiments/4))==0 || experiment == num_experiments
+                            disp("iter "+experiment);
                         end
         
                         if gt == 1

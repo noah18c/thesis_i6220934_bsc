@@ -1,21 +1,23 @@
-function [all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex1(max_signals,num_experiments,optimal_order,num_components)
+function [all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex1(signal_params, max_signals,num_experiments,optimal_order,num_components)
     addpath('./tensorlab/');
     
-    % parameters for period, amplitude, and interval to be tested
-    
+    % parameters for period, amplitude, sampling frequency (Hz), and interval to be tested
+    % example signal parameter setup (needs to have exactly 4 columns)
+    %{
     signal_params = [
-        1, 1, 100;
-        10, 1, 100;
-        1, 100, 100;
-        10, 100, 100;
-        1, 1, 200;
-        10, 1, 200;
-        1, 100, 200;
-        10, 100, 200
+        1, 1, 1, 100;
+        10, 1, 1, 100;
+        1, 100, 1, 100;
+        10, 100, 1, 100;
+        1, 1, 1, 200;
+        10, 1, 1, 200;
+        1, 100, 1, 200;
+        10, 100, 1, 200
     ];
+    %}
     
     max_signals_param = size(signal_params,1);
-    
+
     % Total number of simulations:
     % max_signals_param*max_signals*gt*num_experiments
     num_predict = 1;
@@ -40,8 +42,8 @@ function [all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex1(max_signals,num_exp
             % Generate sinusoidal signals
             period = signal_params(sim_param,1);
             amp = signal_params(sim_param,2);
-            dt = 1;
-            interval = signal_params(sim_param,3);
+            dt = 1/signal_params(sim_param,3);
+            interval = signal_params(sim_param,4);
             t = (0:dt:interval)';
             N = length(t);  % Number of sampling points in the time series
             
@@ -120,7 +122,9 @@ function [all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex1(max_signals,num_exp
                 
                 % Perform the experiment
                 for experiment = 1:num_experiments 
-                    if mod(experiment,10)==0
+                    if mod(experiment,round(num_experiments/4))==0 && mod(experiment,2) == 0
+                        disp("iter "+experiment);
+                    elseif mod(experiment,round(num_experiments/4))==0 || experiment == num_experiments
                         disp("iter "+experiment);
                     end
     

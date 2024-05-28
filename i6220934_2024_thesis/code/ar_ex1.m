@@ -21,7 +21,7 @@ function [all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex1(signal_params, max_
     % Total number of simulations:
     % max_signals_param*max_signals*gt*num_experiments
     num_predict = 1;
-    
+    noise_option = 1;
     
     % 5 metrics, 6 models (including actual), number of different parameter
     % setups
@@ -39,55 +39,13 @@ function [all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex1(signal_params, max_
             disp("Parameter simulation "+sim_param+"/"+max_signals_param);
             disp("Generated signal "+sim+"/"+max_signals);
             
-            % Generate sinusoidal signals
-            period = signal_params(sim_param,1);
-            amp = signal_params(sim_param,2);
-            dt = 1/signal_params(sim_param,3);
-            interval = signal_params(sim_param,4);
-            t = (0:dt:interval)';
-            N = length(t);  % Number of sampling points in the time series
-            
-            % Define base signals without decay and random addition
-            base_signal1 = amp*sin(2 * pi * period * round((rand()*0.1+0.01),2) * t);
-            base_signal2 = amp*sin(2 * pi * period * round((rand()*0.1+0.01),2) * t);
-            base_signal3 = amp*sin(2 * pi * period * round((rand()*0.1+0.01),2) * t);
-            
-            % Determine option testing purposes
-            signal_option = 3;
-            noise_option = 1;
-            
-            % Apply selected option
-            switch signal_option
-                case 1
-                    % No decay or random addition
-                    signal1 = base_signal1;
-                    signal2 = base_signal2;
-                    signal3 = base_signal3;
-                case 2
-                    % No random addition
-                    signal1 = base_signal1 .* exp(-0.01 * t);
-                    signal2 = base_signal2 .* exp(-0.01 * t);
-                    signal3 = base_signal3 .* exp(-0.01 * t);
-                case 3
-                    % Everything (decay and random addition)
-                    signal1 = base_signal1 .* exp(-0.01 * t) + rand() * 10;
-                    signal2 = base_signal2 .* exp(-0.01 * t) - rand() * 10;
-                    signal3 = base_signal3 .* exp(-0.01 * t) + rand() * 10;
-                case 4
-                    % No decay, random addition
-                    signal1 = base_signal1 + rand() * 10;
-                    signal2 = base_signal2 - rand() * 10;
-                    signal3 = base_signal3 + rand() * 10;
-                otherwise
-                    error('Invalid option selected');
-            end
-            
-            % Combine signals to form the time series
-            time_series = signal1 + signal2 + signal3;
+            time_series = rsignal(signal_params(sim_param, 1),signal_params(sim_param, 2),signal_params(sim_param, 3),signal_params(sim_param, 4));
+
+            N = length(time_series); % Number of sampling points in the time series
             
             % Alternative you can check what the predictive accuracy is when
             % data is rounded, more applicable to e.g. financial data
-            %time_series = round(signal1 + signal2 + signal3,3);
+            %time_series = round(rsignal(signal_params(sim_param, 1),signal_params(sim_param, 2),signal_params(sim_param, 3),signal_params(sim_param, 4)),3);
             
             % we simulate different ground truths (gt)
             % gt == 1: signal without noise is gt

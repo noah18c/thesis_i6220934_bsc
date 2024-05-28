@@ -14,8 +14,7 @@ function [all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex1(max_signals,num_exp
         10, 100, 200
     ];
     
-    %max_signals_param = size(signal_params,1);
-    max_signals_param = 2;
+    max_signals_param = size(signal_params,1);
     
     % Total number of simulations:
     % max_signals_param*max_signals*gt*num_experiments

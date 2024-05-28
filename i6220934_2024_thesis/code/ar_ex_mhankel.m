@@ -1,4 +1,4 @@
-function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_mdim(signal_params, max_signals, num_experiments, optimal_order, num_components, L_range)
+function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_mhankel(signal_params, max_signals, num_experiments, optimal_order, num_components, L_range)
     addpath('./tensorlab/');
     
     % parameters for period, amplitude, sampling frequency (Hz), and interval to be tested

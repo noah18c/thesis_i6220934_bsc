@@ -44,7 +44,7 @@ function predictions = ar_svd(training_series, num_predict, ar_order, svd_order,
     end
 
     % Create Hankel matrix
-    H2D = hankel(training_series(1:L), training_series(L:end))
+    H2D = hankel(training_series(1:L), training_series(L:end));
     [U, S, V] = svd(H2D, 'econ');    
 
     num_components = svd_order;

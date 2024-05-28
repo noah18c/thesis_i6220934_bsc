@@ -112,8 +112,9 @@ function predictions = ar_cpd_ms(training_series, num_predict, ar_order, cp_orde
             predictions = sum(pred_tcomponents, 2);
 
         case 2
-            % Decomposition using Segmented Tensor (CPD)
+            % Decomposition using Hankel Tensor (CPD)
             S3D = segmentize(training_series,3,'Segsize',[L M],'UseAllSamples',true);
+            
         
             % Compute CPD
             R = cp_order; % Number of components

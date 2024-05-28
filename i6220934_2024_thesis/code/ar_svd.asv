@@ -109,6 +109,15 @@ function predictions = ar_svd(training_series, num_predict, ar_order, svd_order,
                 hold off;
             end
         case 2
+            if mod(length(training_series), L) ~= 0
+                disp("N is not divisible by segment size, increasing by 1.")
+                L = L + 1;
+                disp("Current L = " + L);
+                if L >= length(training_series) / 2
+                    error('Invalid L, segment is larger than half the size of the data!');
+                end
+            end
+
             S2D = segmentize(training_series,2,'Segsize',L,'UseAllSamples',true);
             [U, S, V] = svd(S2D, 'econ');    
         

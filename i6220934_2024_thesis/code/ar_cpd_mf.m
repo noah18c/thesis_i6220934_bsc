@@ -54,7 +54,7 @@ function predictions = ar_cpd_mf(training_series, num_predict, ar_order, cp_orde
 
     % Decomposition using Hankel Tensor (CPD)
     H3D = hankelize(training_series, 'Sizes', [L, M]);
-    disp("Dimension of hankel: "+size(H3D));
+    %disp("Dimension of hankel: "+size(H3D));
 
 
     % Compute CPD

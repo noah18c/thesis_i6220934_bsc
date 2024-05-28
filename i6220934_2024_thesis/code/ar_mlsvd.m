@@ -53,7 +53,7 @@ function predictions = ar_mlsvd(training_series, num_predict, ar_order, reductio
 
     % Approximate the dimensions so that H3D is almost cubic
     H3D = hankelize(training_series, 'Sizes', [L, M]);
-    disp("Dimension of hankel: "+size(H3D));
+    %disp("Dimension of hankel: "+size(H3D));
 
     size_core = round([size(H3D, 1), size(H3D, 2), size(H3D, 3)] * reduction);
     

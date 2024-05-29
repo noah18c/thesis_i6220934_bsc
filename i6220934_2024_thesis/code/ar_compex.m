@@ -17,25 +17,25 @@ function [best_components, all_errors_gt1_mean, all_errors_gt2_mean] = ar_compex
     %}
     
     % Max signals parameter
-    max_signals_param = size(signal_params,1);  % You can adjust this as needed
+    max_signals_param = size(signal_params, 1);  % You can adjust this as needed
 
     noise_option = 1;
     num_predict = 1;
     
-    % 5 metrics, 4 models (including actual), number of different parameter setups
-    all_errors_gt1_mean = zeros(5, 4, max_signals_param, length(components_range));
-    all_errors_gt2_mean = zeros(5, 4, max_signals_param, length(components_range));
+    % 5 metrics, 5 models (including actual), number of different parameter setups
+    all_errors_gt1_mean = zeros(5, 6, max_signals_param, length(components_range));
+    all_errors_gt2_mean = zeros(5, 6, max_signals_param, length(components_range));
     
     for sim_param = 1:max_signals_param
         % Iterate over different values of num_components
         for comp_idx = 1:length(components_range)
-            fprintf("Testing %d number of components\n", comp_idx);
+            fprintf("Testing %d number of components\n", components_range(comp_idx));
             num_components = components_range(comp_idx);
 
             % Number of metrics by number of simulations of different signals for
             % different simulation parameters
-            all_errors_gt1 = zeros(5, 4, max_signals);
-            all_errors_gt2 = zeros(5, 4, max_signals);
+            all_errors_gt1 = zeros(5, 6, max_signals);
+            all_errors_gt2 = zeros(5, 6, max_signals);
         
             for sim = 1:max_signals
                 disp("Parameter simulation " + sim_param + "/" + max_signals_param);
@@ -61,88 +61,94 @@ function [best_components, all_errors_gt1_mean, all_errors_gt2_mean] = ar_compex
                 
                 % Combine signals to form the time series
                 time_series = signal1 + signal2 + signal3;
+
+                % Ground truth for final point
+                ground_truths1 = time_series(end - num_predict + 1:end); 
+                noisy_series = time_series + noise_option * (randn(N, 1) * 0.4);
+                ground_truths2 = noisy_series(end - num_predict + 1:end);
                 
-                for gt = 1:2    
-                    disp("GT " + gt);
-                    % Ground truth for final point
-                    ground_truths = zeros(num_predict, num_experiments);
+                ground_truths = {ground_truths1, ground_truths2};
+                training_series = noisy_series(1:end - num_predict);   
                     
-                    % Prepare storage for predictions
-                    predictions_SVD = zeros(num_predict, num_experiments);
-                    rel_error_SVD = zeros(num_predict, num_experiments);
-                    norm_error_SVD = zeros(num_predict, num_experiments);
-                    
-                    predictions_CPD = zeros(num_predict, num_experiments);
-                    rel_error_CPD = zeros(num_predict, num_experiments);
-                    norm_error_CPD = zeros(num_predict, num_experiments);
-                    
-                    predictions_cpd_col = zeros(num_predict, num_experiments);
-                    rel_error_cpd_col = zeros(num_predict, num_experiments);
-                    norm_error_cpd_col = zeros(num_predict, num_experiments);
-                    
-                    % Perform the experiment
-                    for experiment = 1:num_experiments 
-                        if mod(experiment,round(num_experiments/4))==0 && mod(experiment,2) == 0
-                            disp("iter "+experiment);
-                        elseif mod(experiment,round(num_experiments/4))==0 || experiment == num_experiments
-                            disp("iter "+experiment);
-                        end
-        
-                        if gt == 1
-                            ground_truths(:, experiment) = time_series(end - num_predict + 1:end); 
-                        end
+                % Prepare storage for predictions
+                predictions_SVD = zeros(num_predict, num_experiments);
+                predictions_cpd_s = zeros(num_predict, num_experiments);
+                predictions_cpd_f = zeros(num_predict, num_experiments);
+                predictions_cpd_cols = zeros(num_predict, num_experiments);
+                predictions_cpd_colf = zeros(num_predict, num_experiments);
+                
+                % Prepare storage for errors
+                rel_error_SVD = zeros(num_predict, num_experiments, 2);
+                norm_error_SVD = zeros(num_predict, num_experiments, 2);
+                rel_error_cpd_s = zeros(num_predict, num_experiments, 2);
+                norm_error_cpd_s = zeros(num_predict, num_experiments, 2);
+                rel_error_cpd_f = zeros(num_predict, num_experiments, 2);
+                norm_error_cpd_f = zeros(num_predict, num_experiments, 2);
+                rel_error_cpd_cols = zeros(num_predict, num_experiments, 2);
+                norm_error_cpd_cols = zeros(num_predict, num_experiments, 2);
+                rel_error_cpd_colf = zeros(num_predict, num_experiments, 2);
+                norm_error_cpd_colf = zeros(num_predict, num_experiments, 2);
+                
+                % Perform the experiment
+                for experiment = 1:num_experiments 
+                    if mod(experiment, round(num_experiments / 4)) == 0 && mod(experiment, 2) == 0
+                        disp("iter " + experiment);
+                    elseif mod(experiment, round(num_experiments / 4)) == 0 || experiment == num_experiments
+                        disp("iter " + experiment);
+                    end
+
+                    % Generate predictions once
+                    predictions_SVD(:, experiment) = ar_svd(training_series, num_predict, optimal_order, num_components);
+                    predictions_cpd_s(:, experiment) = ar_cpd_s(training_series, num_predict, optimal_order, num_components);
+                    predictions_cpd_f(:, experiment) = ar_cpd_f(training_series, num_predict, optimal_order, num_components);
+                    predictions_cpd_cols(:, experiment) = ar_cpd_cols(training_series, num_predict, optimal_order, num_components);
+                    predictions_cpd_colf(:, experiment) = ar_cpd_colf(training_series, num_predict, 10, num_components);
+
+                    % Calculate errors for both ground truths
+                    for gt = 1:2
+                        % Error calculations
+                        rel_error_SVD(:, experiment, gt) = abs(predictions_SVD(:, experiment) - ground_truths{gt}) ./ abs(ground_truths{gt});
+                        norm_error_SVD(:, experiment, gt) = norm(predictions_SVD(:, experiment), 2) ./ norm(ground_truths{gt}, 2);
+
+                        rel_error_cpd_s(:, experiment, gt) = abs(predictions_cpd_s(:, experiment) - ground_truths{gt}) ./ abs(ground_truths{gt});
+                        norm_error_cpd_s(:, experiment, gt) = norm(predictions_cpd_s(:, experiment), 2) ./ norm(ground_truths{gt}, 2);
+
+                        rel_error_cpd_f(:, experiment, gt) = abs(predictions_cpd_f(:, experiment) - ground_truths{gt}) ./ abs(ground_truths{gt});
+                        norm_error_cpd_f(:, experiment, gt) = norm(predictions_cpd_f(:, experiment), 2) ./ norm(ground_truths{gt}, 2);
                         
-                        noisy_series = time_series + noise_option * (randn(N, 1) * 0.4);
-                        
-                        if gt == 2
-                            ground_truths(:, experiment) = noisy_series(end - num_predict + 1:end);
-                        end
-                        
-                        training_series = noisy_series(1:end - num_predict);   
+                        rel_error_cpd_cols(:, experiment, gt) = abs(predictions_cpd_cols(:, experiment) - ground_truths{gt}) ./ abs(ground_truths{gt});
+                        norm_error_cpd_cols(:, experiment, gt) = norm(predictions_cpd_cols(:, experiment), 2) ./ norm(ground_truths{gt}, 2);
+
+                        rel_error_cpd_colf(:, experiment, gt) = abs(predictions_cpd_colf(:, experiment) - ground_truths{gt}) ./ abs(ground_truths{gt});
+                        norm_error_cpd_colf(:, experiment, gt) = norm(predictions_cpd_colf(:, experiment), 2) ./ norm(ground_truths{gt}, 2);
+                    end
+                end   
+                       
+                % Calculate statistics over number of experiments done
+                for gt = 1:2
+                    errors_SVD = [mean(predictions_SVD, 2), std(predictions_SVD, 0, 2), rmse(predictions_SVD, ground_truths{gt}, 2), mean(rel_error_SVD(:, :, gt), 2), mean(norm_error_SVD(:, :, gt), 2)]';
+                    errors_cpd_s = [mean(predictions_cpd_s, 2), std(predictions_cpd_s, 0, 2), rmse(predictions_cpd_s, ground_truths{gt}, 2), mean(rel_error_cpd_s(:, :, gt), 2), mean(norm_error_cpd_s(:, :, gt), 2)]';
+                    errors_cpd_f = [mean(predictions_cpd_f, 2), std(predictions_cpd_f, 0, 2), rmse(predictions_cpd_f, ground_truths{gt}, 2), mean(rel_error_cpd_f(:, :, gt), 2), mean(norm_error_cpd_f(:, :, gt), 2)]';
+                    errors_cpd_cols = [mean(predictions_cpd_cols, 2), std(predictions_cpd_cols, 0, 2), rmse(predictions_cpd_cols, ground_truths{gt}, 2), mean(rel_error_cpd_cols(:, :, gt), 2), mean(norm_error_cpd_cols(:, :, gt), 2)]';
+                    errors_cpd_colf = [mean(predictions_cpd_colf, 2), std(predictions_cpd_colf, 0, 2), rmse(predictions_cpd_colf, ground_truths{gt}, 2), mean(rel_error_cpd_colf(:, :, gt), 2), mean(norm_error_cpd_colf(:, :, gt), 2)]';
                     
-                        % 1. Decomposition using Hankel Matrix (SVD)
-                        predictions_SVD(:, experiment) = ar_svd(training_series, num_predict, optimal_order, num_components);
-                    
-                        % 2. Decomposition using Hankel Tensor (CPD sum of mean anti-diagonals)
-                        predictions_CPD(:, experiment) = ar_cpd_ms(training_series, num_predict, optimal_order, num_components);
-                    
-                        % 3. Decomposition using Hankel Tensor (CPD predict along column c)
-                        predictions_cpd_col(:, experiment) = ar_cpd_col(training_series, num_predict, 10, num_components);
-                    
-                        % 4. Error calculations
-                        rel_error_SVD(:, experiment) = abs(predictions_SVD(:, experiment) - ground_truths(:, experiment)) ./ abs(ground_truths(:, experiment));
-                        norm_error_SVD(:, experiment) = norm(predictions_SVD(:, experiment), 2) ./ norm(ground_truths(:, experiment), 2);
-                    
-                        rel_error_CPD(:, experiment) = abs(predictions_CPD(:, experiment) - ground_truths(:, experiment)) ./ abs(ground_truths(:, experiment));
-                        norm_error_CPD(:, experiment) = norm(predictions_CPD(:, experiment), 2) ./ norm(ground_truths(:, experiment), 2);
-                    
-                        rel_error_cpd_col(:, experiment) = abs(predictions_cpd_col(:, experiment) - ground_truths(:, experiment)) ./ abs(ground_truths(:, experiment));
-                        norm_error_cpd_col(:, experiment) = norm(predictions_cpd_col(:, experiment), 2) ./ norm(ground_truths(:, experiment), 2);
-                    end   
-                           
-                    % Calculate statistics over number of experiments done
-                    errors_SVD = [mean(predictions_SVD, 2), std(predictions_SVD, 0, 2), rmse(predictions_SVD, ground_truths, 2), mean(rel_error_SVD, 2), mean(norm_error_SVD, 2)]';
-                    errors_CPD = [mean(predictions_CPD, 2), std(predictions_CPD, 0, 2), rmse(predictions_CPD, ground_truths, 2), mean(rel_error_CPD, 2), mean(norm_error_CPD, 2)]';
-                    errors_cpd_col = [mean(predictions_cpd_col, 2), std(predictions_cpd_col, 0, 2), rmse(predictions_cpd_col, ground_truths, 2), mean(rel_error_cpd_col, 2), mean(norm_error_cpd_col, 2)]';
-                    
-                    % depending on ground truth, set stats to either errors_concat1 or 2
                     if gt == 1
-                        actual_stats = [mean(ground_truths, 2), 0, 0, 0, 0]';
-                        errors_concat1 = [actual_stats, errors_SVD, errors_CPD, errors_cpd_col];
+                        actual_stats = [mean(ground_truths{gt}, 2), 0, 0, 0, 0]';
+                        errors_concat1 = [actual_stats, errors_SVD, errors_cpd_s, errors_cpd_f, errors_cpd_cols, errors_cpd_colf];
                     else
-                        actual_stats = [mean(ground_truths, 2), std(ground_truths, 0, 2), 0, 0, 0]';
-                        errors_concat2 = [actual_stats, errors_SVD, errors_CPD, errors_cpd_col];
+                        actual_stats = [mean(ground_truths{gt}, 2), std(ground_truths{gt}, 0, 2), 0, 0, 0]';
+                        errors_concat2 = [actual_stats, errors_SVD, errors_cpd_s, errors_cpd_f, errors_cpd_cols, errors_cpd_colf];
                     end
                 end
-        
-                % add matrix of error calculations as a slice to 3d matrix
+
+                % Add matrix of error calculations as a slice to 3d matrix
                 all_errors_gt1(:, :, sim) = errors_concat1;
                 all_errors_gt2(:, :, sim) = errors_concat2;
             end
             
-            % below are the average evaluation scores (mean of matrix slices)
+            % Below are the average evaluation scores (mean of matrix slices)
             % rows: mean; sd; RMSE; MRE; MRSE
-            % columns: SVD, CPD_ms, CPD_col
+            % columns: SVD, CPD_S, CPD_F, CPD_Cols, CPD_ColF
             % slices: results per signal parameter set
             all_errors_gt1_mean(:, :, sim_param, comp_idx) = mean(all_errors_gt1, 3);
             all_errors_gt2_mean(:, :, sim_param, comp_idx) = mean(all_errors_gt2, 3);
@@ -150,19 +156,23 @@ function [best_components, all_errors_gt1_mean, all_errors_gt2_mean] = ar_compex
     end
     disp("Done!");
 
-    % Select best component based on average errors for SVD, CPD-MS, and CPD-Col
+    % Select best component based on average errors for SVD, CPD_S, CPD_F, CPD_Cols, and CPD_ColF
     % Here, assuming lower RMSE means better performance.
     % Rows: mean; sd; RMSE; MRE; MRSE
-    % Columns: SVD, CPD_ms, CPD_col
+    % Columns: SVD, CPD_S, CPD_F, CPD_Cols, CPD_ColF
     best_svd_idx = zeros(1, max_signals_param);
-    best_cpd_ms_idx = zeros(1, max_signals_param);
-    best_cpd_col_idx = zeros(1, max_signals_param);
+    best_cpd_s_idx = zeros(1, max_signals_param);
+    best_cpd_f_idx = zeros(1, max_signals_param);
+    best_cpd_cols_idx = zeros(1, max_signals_param);
+    best_cpd_colf_idx = zeros(1, max_signals_param);
     
     for sim_param = 1:max_signals_param
-        [~, best_svd_idx(sim_param)] = min(squeeze(all_errors_gt1_mean(3, 2, sim_param, :)));
-        [~, best_cpd_ms_idx(sim_param)] = min(squeeze(all_errors_gt1_mean(3, 3, sim_param, :)));
-        [~, best_cpd_col_idx(sim_param)] = min(squeeze(all_errors_gt1_mean(3, 4, sim_param, :)));
+        [~, best_svd_idx(sim_param)] = min(squeeze(all_errors_gt1_mean(3, 1, sim_param, :)));
+        [~, best_cpd_s_idx(sim_param)] = min(squeeze(all_errors_gt1_mean(3, 2, sim_param, :)));
+        [~, best_cpd_f_idx(sim_param)] = min(squeeze(all_errors_gt1_mean(3, 3, sim_param, :)));
+        [~, best_cpd_cols_idx(sim_param)] = min(squeeze(all_errors_gt1_mean(3, 4, sim_param, :)));
+        [~, best_cpd_colf_idx(sim_param)] = min(squeeze(all_errors_gt1_mean(3, 5, sim_param, :)));
     end
 
-    best_components = struct('SVD', components_range(best_svd_idx), 'CPD_MS', components_range(best_cpd_ms_idx), 'CPD_Col', components_range(best_cpd_col_idx));
+    best_components = struct('SVD', components_range(best_svd_idx), 'CPD_S', components_range(best_cpd_s_idx), 'CPD_F', components_range(best_cpd_f_idx), 'CPD_Cols', components_range(best_cpd_cols_idx), 'CPD_ColF', components_range(best_cpd_colf_idx));
 end

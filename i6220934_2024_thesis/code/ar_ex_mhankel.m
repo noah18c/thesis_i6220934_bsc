@@ -22,7 +22,7 @@ function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_mhankel(sign
     noise_option = 1;
     num_predict = 1;
     
-    % 5 metrics, 4 models (including actual), number of different parameter setups
+    % 5 metrics, 1 model (including actual), number of different parameter setups
     all_errors_gt1_mean = zeros(5, 2, max_signals_param, length(L_range));
     all_errors_gt2_mean = zeros(5, 2, max_signals_param, length(L_range));
     
@@ -41,67 +41,63 @@ function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_mhankel(sign
                 disp("Parameter simulation " + sim_param + "/" + max_signals_param);
                 disp("Generated signal " + sim + "/" + max_signals);
                 
-                time_series = rsignal(signal_params(sim_param, 1),signal_params(sim_param, 2),signal_params(sim_param, 3),signal_params(sim_param, 4));
+                time_series = rsignal(signal_params(sim_param, 1), signal_params(sim_param, 2), signal_params(sim_param, 3), signal_params(sim_param, 4));
 
                 N = length(time_series); % Number of sampling points in the time series
+
+                % Ground truth for final point
+                ground_truths1 = time_series(end - num_predict + 1:end); 
+                noisy_series = time_series + noise_option * (randn(N, 1) * 0.4);
+                ground_truths2 = noisy_series(end - num_predict + 1:end);
                 
-                for gt = 1:2    
-                    disp("GT " + gt);
-                    % Ground truth for final point
-                    ground_truths = zeros(num_predict, num_experiments);
+                ground_truths = {ground_truths1, ground_truths2};
+                training_series = noisy_series(1:end - num_predict);   
                     
-                    % Prepare storage for predictions
-                    predictions_SVD = zeros(num_predict, num_experiments);
-                    rel_error_SVD = zeros(num_predict, num_experiments);
-                    norm_error_SVD = zeros(num_predict, num_experiments);
+                % Prepare storage for predictions
+                predictions_SVD = zeros(num_predict, num_experiments);
+                
+                % Prepare storage for errors
+                rel_error_SVD = zeros(num_predict, num_experiments, 2);
+                norm_error_SVD = zeros(num_predict, num_experiments, 2);
+                
+                % Perform the experiment
+                for experiment = 1:num_experiments 
+                    if mod(experiment, round(num_experiments / 4)) == 0 && mod(experiment, 2) == 0
+                        disp("iter " + experiment);
+                    elseif mod(experiment, round(num_experiments / 4)) == 0 || experiment == num_experiments
+                        disp("iter " + experiment);
+                    end
+
+                    % Generate predictions once
+                    predictions_SVD(:, experiment) = ar_svd(training_series, num_predict, optimal_order, num_components, 'L', L);
+
+                    % Calculate errors for both ground truths
+                    for gt = 1:2
+                        % Error calculations
+                        rel_error_SVD(:, experiment, gt) = abs(predictions_SVD(:, experiment) - ground_truths{gt}) ./ abs(ground_truths{gt});
+                        norm_error_SVD(:, experiment, gt) = norm(predictions_SVD(:, experiment), 2) ./ norm(ground_truths{gt}, 2);
+                    end
+                end   
+                       
+                % Calculate statistics over number of experiments done
+                for gt = 1:2
+                    errors_SVD = [mean(predictions_SVD, 2), std(predictions_SVD, 0, 2), rmse(predictions_SVD, ground_truths{gt}, 2), mean(rel_error_SVD(:, :, gt), 2), mean(norm_error_SVD(:, :, gt), 2)]';
                     
-                    % Perform the experiment
-                    for experiment = 1:num_experiments 
-                        if mod(experiment, round(num_experiments / 4)) == 0 && mod(experiment, 2) == 0
-                            disp("iter " + experiment);
-                        elseif mod(experiment, round(num_experiments / 4)) == 0 || experiment == num_experiments
-                            disp("iter " + experiment);
-                        end
-        
-                        if gt == 1
-                            ground_truths(:, experiment) = time_series(end - num_predict + 1:end); 
-                        end
-                        
-                        noisy_series = time_series + noise_option * (randn(N, 1) * 0.4);
-                        
-                        if gt == 2
-                            ground_truths(:, experiment) = noisy_series(end - num_predict + 1:end);
-                        end
-                        
-                        training_series = noisy_series(1:end - num_predict);   
-                    
-                        % 1. Decomposition using Hankel Matrix (SVD)
-                        predictions_SVD(:, experiment) = ar_svd(training_series, num_predict, optimal_order, num_components, 'L', L);
-                    
-                        % 2. Error calculations
-                        rel_error_SVD(:, experiment) = abs(predictions_SVD(:, experiment) - ground_truths(:, experiment)) ./ abs(ground_truths(:, experiment));
-                        norm_error_SVD(:, experiment) = norm(predictions_SVD(:, experiment), 2) ./ norm(ground_truths(:, experiment), 2);
-                    end   
-                           
-                    % Calculate statistics over number of experiments done
-                    errors_SVD = [mean(predictions_SVD, 2), std(predictions_SVD, 0, 2), rmse(predictions_SVD, ground_truths, 2), mean(rel_error_SVD, 2), mean(norm_error_SVD, 2)]';
-                    
-                    % depending on ground truth, set stats to either errors_concat1 or 2
                     if gt == 1
-                        actual_stats = [mean(ground_truths, 2), 0, 0, 0, 0]';
+                        actual_stats = [mean(ground_truths{gt}, 2), 0, 0, 0, 0]';
                         errors_concat1 = [actual_stats, errors_SVD];
                     else
-                        actual_stats = [mean(ground_truths, 2), std(ground_truths, 0, 2), 0, 0, 0]';
+                        actual_stats = [mean(ground_truths{gt}, 2), std(ground_truths{gt}, 0, 2), 0, 0, 0]';
                         errors_concat2 = [actual_stats, errors_SVD];
                     end
                 end
-        
-                % add matrix of error calculations as a slice to 3d matrix
+
+                % Add matrix of error calculations as a slice to 3d matrix
                 all_errors_gt1(:, :, sim) = errors_concat1;
                 all_errors_gt2(:, :, sim) = errors_concat2;
             end
             
-            % below are the average evaluation scores (mean of matrix slices)
+            % Below are the average evaluation scores (mean of matrix slices)
             % rows: mean; sd; RMSE; MRE; MRSE
             % columns: SVD
             % slices: results per signal parameter set

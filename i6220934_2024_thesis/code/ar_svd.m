@@ -17,7 +17,8 @@ function predictions = ar_svd(training_series, num_predict, ar_order, svd_order,
 
     % Define default values for optional parameters
     defaultPlotCompare = false;
-    defaultEmbedding = 1; % 1 is Hankel, 2 is segmentation
+    defaultEmbedding = 1; % 1 is Hankel, 2 is segmentation, 3 is decimation
+    defaultMethod = @mean;
 
     % Create an input parser
     p = inputParser;
@@ -31,6 +32,7 @@ function predictions = ar_svd(training_series, num_predict, ar_order, svd_order,
     % Add optional name-value pair parameters
     addParameter(p, 'plotCompare', defaultPlotCompare, @islogical);
     addParameter(p, 'embedding', defaultEmbedding, @isnumeric);
+    addParameter(p, 'Method', defaultMethod);
 
     % Parse inputs
     parse(p, training_series, num_predict, ar_order, svd_order, varargin{:});
@@ -38,11 +40,12 @@ function predictions = ar_svd(training_series, num_predict, ar_order, svd_order,
     % Extract values from the input parser
     plotCompare = p.Results.plotCompare;
     embedding = p.Results.embedding;
+    method = p.Results.Method;
 
     % Set default value for L based on embedding method
     if embedding == 1
         defaultL = floor(length(training_series) / 2) + 1;
-    elseif embedding == 2
+    elseif embedding == 2 || embedding == 3
         defaultL = floor(sqrt(length(training_series)));
     else
         error('Invalid embedding value. Choose 1 for Hankel or 2 for segmentation.');
@@ -81,7 +84,7 @@ function predictions = ar_svd(training_series, num_predict, ar_order, svd_order,
                 matrix_component = U(:,comp) * S(comp, comp) * V(:,comp)';
         
                 % Convert component matrix back to time series by averaging along anti-diagonals
-                component_series = serialize2D(matrix_component);
+                component_series = dehankelize(matrix_component, 'Method', method);
         
                 if plotCompare
                     plot(component_series);
@@ -127,7 +130,7 @@ function predictions = ar_svd(training_series, num_predict, ar_order, svd_order,
                 matrix_component = U(:,comp) * S(comp, comp) * V(:,comp)';
         
                 % Convert component matrix back to time series by reshaping
-                component_series = desegmentize(matrix_component);
+                component_series = desegmentize(matrix_component, 'Method', method);
         
                 if plotCompare
                     plot(component_series);
@@ -154,5 +157,53 @@ function predictions = ar_svd(training_series, num_predict, ar_order, svd_order,
                 ylabel("Value");
                 hold off;
             end
+        case 3
+           
+            D2D = decimate(training_series,'Nsamples',L,'UseAllSamples',true);
+            [U, S, V] = svd(D2D, 'econ');    
+        
+            num_components = svd_order;
+            pred_components = zeros(num_predict, num_components);
+        
+            if plotCompare
+                figure;
+                title("Original vs Serialized components")
+                plot(training_series);
+                hold on;
+            end
+        
+            for comp = 1:num_components
+                % Tensor for holding all components (which are matrices)
+                matrix_component = U(:,comp) * S(comp, comp) * V(:,comp)';
+        
+                % Convert component matrix back to time series by reshaping
+                component_series = dedecimate(matrix_component, 'Method', method);
+        
+                if plotCompare
+                    plot(component_series);
+                    legend({"Original"});
+                    xlabel("Time");
+                    ylabel("Value");
+                    hold off;
+                end
+                
+                model_comp = ar(component_series, ar_order);
+                pred_components(:,comp) = forecast(model_comp, component_series, num_predict);
+            end
+        
+            predictions = sum(pred_components, 2);
+        
+            if plotCompare
+                figure;
+                title("Original vs Low-rank approx")
+                plot(training_series);
+                hold on;
+                plot(serial3d);
+                legend({"Original", "Low-rank approx"});
+                xlabel("Time");
+                ylabel("Value");
+                hold off;
+            end
+
     end
 end

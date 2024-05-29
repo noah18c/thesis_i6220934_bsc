@@ -1,4 +1,4 @@
-function predictions = ar_cpd_ms(training_series, num_predict, ar_order, cp_order, varargin)
+function predictions = ar_cpd_s(training_series, num_predict, ar_order, cp_order, varargin)
     % Function to predict future points in a time series using 
     % Canonical Polyadic Decomposition (CPD) and 
     % Autoregressive (AR) modeling. Decomposes Hankel tensor using CPD,
@@ -22,6 +22,8 @@ function predictions = ar_cpd_ms(training_series, num_predict, ar_order, cp_orde
     % Define default values for optional parameters
     defaultEmbedding = 1; % 1 is Hankel, 2 is segmentation
     defaultPlotCompare = false;
+    defaultEven = false; % true = remove first value of uneven sequences for embedding 2
+    defaultMethod = @mean;
 
     % Create an input parser
     p = inputParser;
@@ -35,35 +37,41 @@ function predictions = ar_cpd_ms(training_series, num_predict, ar_order, cp_orde
     % Add optional name-value pair parameters
     addParameter(p, 'embedding', defaultEmbedding, @isnumeric);
     addParameter(p, 'plotCompare', defaultPlotCompare, @islogical);
+    addParameter(p, 'L', [], @isnumeric);
+    addParameter(p, 'M', [], @isnumeric);
+    addParameter(p, 'even', defaultEven, @islogical);
+    addParameter(p, 'Method', defaultMethod);
 
-    % Parse initial inputs to determine embedding
-    parse(p, training_series, num_predict, ar_order, cp_order, varargin{:});
-    embedding = p.Results.embedding;
-
-    % Set default values for L and M based on embedding method
-
-    switch embedding
-        case 1
-            defaultL = floor(length(training_series) / 3);
-            defaultM = floor(length(training_series) / 3);
-        case 2
-            defaultL = floor(length(training_series)^(1/3));
-            defaultM = floor(length(training_series)^(1/3));
-        otherwise
-            error('Invalid embedding value.');
-    end
-
-    % Add L and M parameters after determining the embedding method
-    addParameter(p, 'L', defaultL, @isnumeric);
-    addParameter(p, 'M', defaultM, @isnumeric);
-
-    % Re-parse inputs to include L and M with correct defaults
+    % Parse inputs initially to get embedding value
     parse(p, training_series, num_predict, ar_order, cp_order, varargin{:});
 
     % Extract values from the input parser
-    L = p.Results.L;
-    M = p.Results.M;
+    embedding = p.Results.embedding;
     plotCompare = p.Results.plotCompare;
+    evenSequence = p.Results.even;
+    method = p.Results.Method;
+
+
+    % Set default values for L and M based on embedding method
+    if embedding == 1
+        defaultL = floor(length(training_series) / 3);
+        defaultM = floor(length(training_series) / 3);
+    elseif embedding == 2 || embedding == 3
+        defaultL = floor(length(training_series)^(1/3));
+        defaultM = floor(length(training_series)^(1/3));
+    else
+        error('Invalid embedding value.');
+    end
+
+    % Override defaults if L and M are provided
+    L = defaultL;
+    if ~isempty(p.Results.L)
+        L = p.Results.L;
+    end
+    M = defaultM;
+    if ~isempty(p.Results.M)
+        M = p.Results.M;
+    end
 
     % Ensure L and M are within valid range
     if L > length(training_series) || L < 1
@@ -95,7 +103,7 @@ function predictions = ar_cpd_ms(training_series, num_predict, ar_order, cp_orde
                 tensor_component = cpdgen({fac{1}(:, tcomp), fac{2}(:, tcomp), fac{3}(:, tcomp)});
                 
                 % Reconstruct time series data
-                tensor_series = serialize3D(tensor_component);
+                tensor_series = dehankelize(tensor_component,'Dims',1:3,'Method',method);
         
                 if plotCompare
                     plot(tensor_series);
@@ -112,9 +120,13 @@ function predictions = ar_cpd_ms(training_series, num_predict, ar_order, cp_orde
             predictions = sum(pred_tcomponents, 2);
 
         case 2
-            % Decomposition using Hankel Tensor (CPD)
+            if mod(length(training_series),2)~=0 && evenSequence
+                training_series = training_series(2:end);
+            end
+
+
+            % Decomposition using Segmented Tensor (CPD)
             S3D = segmentize(training_series,3,'Segsize',[L M],'UseAllSamples',true);
-            
         
             % Compute CPD
             R = cp_order; % Number of components
@@ -133,7 +145,7 @@ function predictions = ar_cpd_ms(training_series, num_predict, ar_order, cp_orde
                 tensor_component = cpdgen({fac{1}(:, tcomp), fac{2}(:, tcomp), fac{3}(:, tcomp)});
                 
                 % Reconstruct time series data
-                tensor_series = desegmentize(tensor_component,'Dims',1:3);
+                tensor_series = desegmentize(tensor_component,'Dims',1:3,'Method',method);
         
                 if plotCompare
                     plot(tensor_series);
@@ -148,6 +160,49 @@ function predictions = ar_cpd_ms(training_series, num_predict, ar_order, cp_orde
             end
           
             predictions = sum(pred_tcomponents, 2);
+        case 3
+            if mod(length(training_series),2)~=0 && evenSequence
+                training_series = training_series(2:end);
+            end
+
+
+            % Decomposition using Segmented Tensor (CPD)
+            D3D = decimate(training_series,'Nsamples',[L M],'UseAllSamples',true);
+        
+            % Compute CPD
+            R = cp_order; % Number of components
+            [fac, ~] = cpd(D3D, R);
+        
+            pred_tcomponents = zeros(num_predict, R);
+        
+            if plotCompare
+                figure;
+                title("Original vs Dedecimated components")
+                plot(training_series);
+                hold on;
+            end
+        
+            for tcomp = 1:R
+                tensor_component = cpdgen({fac{1}(:, tcomp), fac{2}(:, tcomp), fac{3}(:, tcomp)});
+                
+                % Reconstruct time series data
+                tensor_series = dedecimate(tensor_component,'Dims',1:3,'Method',method);
+               
+        
+                if plotCompare
+                    plot(tensor_series);
+                    legend({"Original"});
+                    xlabel("Time");
+                    ylabel("Value");
+                    hold off;
+                end
+                
+                model_tcomp = ar(tensor_series, ar_order);
+                pred_tcomponents(:, tcomp) = forecast(model_tcomp, tensor_series, num_predict);
+            end
+          
+            predictions = sum(pred_tcomponents, 2);
+
 
     end
 

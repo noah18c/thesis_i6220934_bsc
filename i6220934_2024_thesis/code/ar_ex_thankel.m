@@ -55,17 +55,17 @@ function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_thankel(sign
                     rel_error_CPD = zeros(num_predict, num_experiments);
                     norm_error_CPD = zeros(num_predict, num_experiments);
                     
-                    predictions_cpd_col = zeros(num_predict, num_experiments);
-                    rel_error_cpd_col = zeros(num_predict, num_experiments);
-                    norm_error_cpd_col = zeros(num_predict, num_experiments);
+                    predictions_cpd_colf = zeros(num_predict, num_experiments);
+                    rel_error_cpd_colf = zeros(num_predict, num_experiments);
+                    norm_error_cpd_colf = zeros(num_predict, num_experiments);
                     
                     predictions_mlsvd = zeros(num_predict, num_experiments);
                     rel_error_mlsvd = zeros(num_predict, num_experiments);
                     norm_error_mlsvd = zeros(num_predict, num_experiments);
                     
-                    predictions_cpd_mf = zeros(num_predict, num_experiments);
-                    rel_error_cpd_mf = zeros(num_predict, num_experiments);
-                    norm_error_cpd_mf = zeros(num_predict, num_experiments);
+                    predictions_cpd_f = zeros(num_predict, num_experiments);
+                    rel_error_cpd_f = zeros(num_predict, num_experiments);
+                    norm_error_cpd_f = zeros(num_predict, num_experiments);
                     
                     % Perform the experiment
                     for experiment = 1:num_experiments                        
@@ -88,44 +88,52 @@ function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_thankel(sign
                         training_series = noisy_series(1:end - num_predict);   
                     
                         % 1. Decomposition using Hankel Tensor (CPD sum of mean anti-diagonals)
-                        predictions_CPD(:, experiment) = ar_cpd_ms(training_series, num_predict, optimal_order, num_components, 'L', L);
+                        predictions_CPD(:, experiment) = ar_cpd_s(training_series, num_predict, optimal_order, num_components, 'L', L);
                     
-                        % 2. Decomposition using Hankel Tensor (CPD predict along column c)
-                        predictions_cpd_col(:, experiment) = ar_cpd_col(training_series, num_predict, 10, num_components, 'L', L);
+                        % 2. Decomposition using Hankel Tensor (CPD predict along column of full tensor)
+                        predictions_cpd_colf(:, experiment) = ar_cpd_colf(training_series, num_predict, 10, num_components, 'L', L);
                     
                         % 3. Decomposition using MLSVD
                         predictions_mlsvd(:, experiment) = ar_mlsvd(training_series, num_predict, optimal_order, reduction, 'L', L);
 
-                        % 4. Decomposition using Hankel Tensor (CPD on full matrix)
-                        predictions_cpd_mf(:, experiment) = ar_cpd_mf(training_series, num_predict, optimal_order, num_components, 'L', L);
+                        % 4. Decomposition using Hankel Tensor (CPD on full tensor)
+                        predictions_cpd_f(:, experiment) = ar_cpd_f(training_series, num_predict, optimal_order, num_components, 'L', L);
+
+                        % 5. Decomposition using Hankel Tensor (CPD predict along column of individual components)
+                        
+
+                        % 6. Decomposition using Hankel Tensor (CPD on
+                        % components of tensor)
+
+         
                         
                         % Error calculations
                         rel_error_CPD(:, experiment) = abs(predictions_CPD(:, experiment) - ground_truths(:, experiment)) ./ abs(ground_truths(:, experiment));
                         norm_error_CPD(:, experiment) = norm(predictions_CPD(:, experiment), 2) ./ norm(ground_truths(:, experiment), 2);
                     
-                        rel_error_cpd_col(:, experiment) = abs(predictions_cpd_col(:, experiment) - ground_truths(:, experiment)) ./ abs(ground_truths(:, experiment));
-                        norm_error_cpd_col(:, experiment) = norm(predictions_cpd_col(:, experiment), 2) ./ norm(ground_truths(:, experiment), 2);
+                        rel_error_cpd_colf(:, experiment) = abs(predictions_cpd_colf(:, experiment) - ground_truths(:, experiment)) ./ abs(ground_truths(:, experiment));
+                        norm_error_cpd_colf(:, experiment) = norm(predictions_cpd_colf(:, experiment), 2) ./ norm(ground_truths(:, experiment), 2);
                         
                         rel_error_mlsvd(:, experiment) = abs(predictions_mlsvd(:, experiment) - ground_truths(:, experiment)) ./ abs(ground_truths(:, experiment));
                         norm_error_mlsvd(:, experiment) = norm(predictions_mlsvd(:, experiment), 2) ./ norm(ground_truths(:, experiment), 2);
                         
-                        rel_error_cpd_mf(:, experiment) = abs(predictions_cpd_mf(:, experiment) - ground_truths(:, experiment)) ./ abs(ground_truths(:, experiment));
-                        norm_error_cpd_mf(:, experiment) = norm(predictions_cpd_mf(:, experiment), 2) ./ norm(ground_truths(:, experiment), 2);
+                        rel_error_cpd_f(:, experiment) = abs(predictions_cpd_f(:, experiment) - ground_truths(:, experiment)) ./ abs(ground_truths(:, experiment));
+                        norm_error_cpd_f(:, experiment) = norm(predictions_cpd_f(:, experiment), 2) ./ norm(ground_truths(:, experiment), 2);
                     end   
                            
                     % Calculate statistics over number of experiments done
                     errors_CPD = [mean(predictions_CPD, 2), std(predictions_CPD, 0, 2), rmse(predictions_CPD, ground_truths, 2), mean(rel_error_CPD, 2), mean(norm_error_CPD, 2)]';
-                    errors_cpd_col = [mean(predictions_cpd_col, 2), std(predictions_cpd_col, 0, 2), rmse(predictions_cpd_col, ground_truths, 2), mean(rel_error_cpd_col, 2), mean(norm_error_cpd_col, 2)]';
+                    errors_cpd_colf = [mean(predictions_cpd_colf, 2), std(predictions_cpd_colf, 0, 2), rmse(predictions_cpd_colf, ground_truths, 2), mean(rel_error_cpd_colf, 2), mean(norm_error_cpd_colf, 2)]';
                     errors_mlsvd = [mean(predictions_mlsvd, 2), std(predictions_mlsvd, 0, 2), rmse(predictions_mlsvd, ground_truths, 2), mean(rel_error_mlsvd, 2), mean(norm_error_mlsvd, 2)]';
-                    errors_cpd_mf = [mean(predictions_cpd_mf, 2), std(predictions_cpd_mf, 0, 2), rmse(predictions_cpd_mf, ground_truths, 2), mean(rel_error_cpd_mf, 2), mean(norm_error_cpd_mf, 2)]';
+                    errors_cpd_f = [mean(predictions_cpd_f, 2), std(predictions_cpd_f, 0, 2), rmse(predictions_cpd_f, ground_truths, 2), mean(rel_error_cpd_f, 2), mean(norm_error_cpd_f, 2)]';
                     
                     % depending on ground truth, set stats to either errors_concat1 or 2
                     if gt == 1
                         actual_stats = [mean(ground_truths, 2), 0, 0, 0, 0]';
-                        errors_concat1 = [actual_stats, errors_CPD, errors_cpd_col, errors_mlsvd, errors_cpd_mf];
+                        errors_concat1 = [actual_stats, errors_CPD, errors_cpd_colf, errors_mlsvd, errors_cpd_f];
                     else
                         actual_stats = [mean(ground_truths, 2), std(ground_truths, 0, 2), 0, 0, 0]';
-                        errors_concat2 = [actual_stats, errors_CPD, errors_cpd_col, errors_mlsvd, errors_cpd_mf];
+                        errors_concat2 = [actual_stats, errors_CPD, errors_cpd_colf, errors_mlsvd, errors_cpd_f];
                     end
                 end
         
@@ -136,7 +144,7 @@ function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_thankel(sign
             
             % below are the average evaluation scores (mean of matrix slices)
             % rows: mean; sd; RMSE; MRE; MRSE
-            % columns: CPD_ms, CPD_col, MLSVD, CPD_mf
+            % columns: cpd_s, cpd_colf, MLSVD, cpd_f
             % slices: results per signal parameter set
             all_errors_gt1_mean(:, :, sim_param, L_idx) = mean(all_errors_gt1, 3);
             all_errors_gt2_mean(:, :, sim_param, L_idx) = mean(all_errors_gt2, 3);
@@ -147,18 +155,18 @@ function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_thankel(sign
     % Select best L based on average errors for CPD-MS, CPD-Col, MLSVD, and CPD-MF
     % Here, assuming lower RMSE means better performance.
     % Rows: mean; sd; RMSE; MRE; MRSE
-    % Columns: CPD_ms, CPD_col, MLSVD, CPD_mf
-    best_cpd_ms_L_idx = zeros(1, max_signals_param);
-    best_cpd_col_L_idx = zeros(1, max_signals_param);
+    % Columns: cpd_s, cpd_colf, MLSVD, cpd_f
+    best_cpd_s_L_idx = zeros(1, max_signals_param);
+    best_cpd_colf_L_idx = zeros(1, max_signals_param);
     best_mlsvd_L_idx = zeros(1, max_signals_param);
-    best_cpd_mf_L_idx = zeros(1, max_signals_param);
+    best_cpd_f_L_idx = zeros(1, max_signals_param);
     
     for sim_param = 1:max_signals_param
-        [~, best_cpd_ms_L_idx(sim_param)] = min(squeeze(all_errors_gt1_mean(3, 2, sim_param, :)));
-        [~, best_cpd_col_L_idx(sim_param)] = min(squeeze(all_errors_gt1_mean(3, 3, sim_param, :)));
+        [~, best_cpd_s_L_idx(sim_param)] = min(squeeze(all_errors_gt1_mean(3, 2, sim_param, :)));
+        [~, best_cpd_colf_L_idx(sim_param)] = min(squeeze(all_errors_gt1_mean(3, 3, sim_param, :)));
         [~, best_mlsvd_L_idx(sim_param)] = min(squeeze(all_errors_gt1_mean(3, 4, sim_param, :)));
-        [~, best_cpd_mf_L_idx(sim_param)] = min(squeeze(all_errors_gt1_mean(3, 5, sim_param, :)));
+        [~, best_cpd_f_L_idx(sim_param)] = min(squeeze(all_errors_gt1_mean(3, 5, sim_param, :)));
     end
 
-    best_L = struct('CPD_MS', L_range(best_cpd_ms_L_idx), 'CPD_Col', L_range(best_cpd_col_L_idx), 'ML_SVD', L_range(best_mlsvd_L_idx), 'CPD_MF', L_range(best_cpd_mf_L_idx));
+    best_L = struct('cpd_s', L_range(best_cpd_s_L_idx), 'cpd_colf', L_range(best_cpd_colf_L_idx), 'ML_SVD', L_range(best_mlsvd_L_idx), 'cpd_f', L_range(best_cpd_f_L_idx));
 end

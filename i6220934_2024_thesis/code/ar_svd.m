@@ -33,6 +33,7 @@ function predictions = ar_svd(training_series, num_predict, ar_order, svd_order,
     addParameter(p, 'plotCompare', defaultPlotCompare, @islogical);
     addParameter(p, 'embedding', defaultEmbedding, @isnumeric);
     addParameter(p, 'Method', defaultMethod);
+    addParameter(p, 'L', [], @isnumeric);
 
     % Parse inputs
     parse(p, training_series, num_predict, ar_order, svd_order, varargin{:});
@@ -42,21 +43,20 @@ function predictions = ar_svd(training_series, num_predict, ar_order, svd_order,
     embedding = p.Results.embedding;
     method = p.Results.Method;
 
-    % Set default value for L based on embedding method
+    % Set default values for L and M based on embedding method
     if embedding == 1
-        defaultL = floor(length(training_series) / 2) + 1;
+        defaultL = floor(length(training_series) / 3);
     elseif embedding == 2 || embedding == 3
-        defaultL = floor(sqrt(length(training_series)));
+        defaultL = floor(length(training_series)^(1/3));
     else
-        error('Invalid embedding value. Choose 1 for Hankel or 2 for segmentation.');
+        error('Invalid embedding value.');
     end
 
-    % Add L parameter after determining the embedding method
-    addParameter(p, 'L', defaultL, @isnumeric);
-
-    % Re-parse to include L with the correct default
-    parse(p, training_series, num_predict, ar_order, svd_order, varargin{:});
-    L = p.Results.L;
+    % Override defaults if L is provided
+    L = defaultL;
+    if ~isempty(p.Results.L)
+        L = p.Results.L;
+    end
 
     % Ensure L is within valid range
     if L > length(training_series) || L < 1

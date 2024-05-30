@@ -1,4 +1,4 @@
-function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_tensor(signal_params, max_signals, num_experiments, varargin)
+function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_tensor(signal_params, LM_range, max_signals, num_experiments, varargin)
     addpath('./tensorlab/');
     % parameters for period, amplitude, sampling frequency (Hz), and interval to be tested
     % example signal parameter setup (needs to have exactly 4 columns)

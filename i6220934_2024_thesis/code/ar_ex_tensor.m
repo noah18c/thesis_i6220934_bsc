@@ -18,7 +18,7 @@ function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_tensor(signa
     % Add default values for optional parameters
     defaultOptimalOrder = 10;
     defaultNumComponents = 1;
-    defaultReduction = 0.2;
+    defaultReduction = 0.001;
     defaultEmbedding = 1;
     defaultMethod = @mean;
     

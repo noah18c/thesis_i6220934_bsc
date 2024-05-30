@@ -1,12 +1,12 @@
-function predictions = ar_mlsvd(training_series, num_predict, ar_order, reduction, varargin)
+function predictions = ar_mlsvd(training_series, num_predict, ar_order, threshold, varargin)
     % Function to predict future points in a time series using 
     % Multilinear Singular Value Decomposition (MLSVD) and 
     % Autoregressive (AR) modeling.
     %
     % Inputs:
     %   training_series - the input time series data for training
-    %   reduction - the reduction factor to determine the size of the core
-    %   tensor (between 0 and 1, lower is more reduction)
+    %   threshold - the threshold factor to determine the size of the core
+    %   tensor (between 0 and 1, lower is more threshold)
     %   num_predict - the number of future points to predict
     %   varargin - optional name-value pair arguments:
     %       'L' - the first dimension of the Hankel tensor
@@ -29,7 +29,7 @@ function predictions = ar_mlsvd(training_series, num_predict, ar_order, reductio
     addRequired(p, 'training_series', @isnumeric);
     addRequired(p, 'num_predict', @isnumeric);
     addRequired(p, 'ar_order', @isnumeric);
-    addRequired(p, 'reduction', @(x) isnumeric(x) && x > 0 && x <= 1);
+    addRequired(p, 'threshold', @(x) isnumeric(x) && x > 0 && x <= 1);
 
     % Add optional name-value pair parameters
     addParameter(p, 'embedding', defaultEmbedding, @isnumeric);
@@ -40,7 +40,7 @@ function predictions = ar_mlsvd(training_series, num_predict, ar_order, reductio
     addParameter(p, 'Method', defaultMethod);
 
     % Parse inputs
-    parse(p, training_series, num_predict, ar_order, reduction, varargin{:});
+    parse(p, training_series, num_predict, ar_order, threshold, varargin{:});
 
     % Extract values from the input parser
     embedding = p.Results.embedding;
@@ -81,15 +81,29 @@ function predictions = ar_mlsvd(training_series, num_predict, ar_order, reductio
         case 1
             % Approximate the dimensions so that H3D is almost cubic
             H3D = hankelize(training_series, 'Sizes', [L, M]);
-            disp("Dimension of hankel: "+size(H3D));
+            %disp("Dimension of hankel: "+size(H3D));
         
-            size_core = round([size(H3D, 1), size(H3D, 2), size(H3D, 3)] * reduction)+1;
-            size_core = [3 3 3];
+            [U, C, sv] = mlsvd(H3D);
+
+            R =[1;1;1];
             
-            [U, S] = lmlra(H3D, size_core);
-        
-            % Reconstruct the low-rank tensor from lmlra factors
-            low_rank_tensor = lmlragen(U, S);
+            % determine the size of the core based off of the singular values a certain
+            % threshold of the singular values compared to the most significant one.
+            for dim = 1:3
+                for i = 2:length(sv{dim})
+                    if sv{dim}(i) > threshold*sv{dim}(1)
+                        R(dim) = R(dim) + 1;
+                    end
+                end
+            end
+            
+            Utrunc{1} = U{1}(:,1:R(1)); % Column space orthogonal base
+            Utrunc{2} = U{2}(:,1:R(2)); % Row-space orthogonal base
+            Utrunc{3} = U{3}(:,1:R(3)); % Fiber-space orthogonal base
+            
+            Ctrunc = C(1:R(1),1:R(2),1:R(3)); % truncated core
+            
+            low_rank_tensor = lmlragen(Utrunc, Ctrunc);
             
             serial3d = dehankelize(low_rank_tensor, 'Dims', 1:3, 'Method', method);   
             
@@ -114,12 +128,27 @@ function predictions = ar_mlsvd(training_series, num_predict, ar_order, reductio
             S3D = segmentize(training_series,3,'Segsize',[L M],'UseAllSamples',true);
             %disp("Dimension of hankel: "+size(H3D));
         
-            size_core = round([size(S3D, 1), size(S3D, 2), size(S3D, 3)] * reduction)+1;
+            [U, C, sv] = mlsvd(S3D);
+
+            R =[1;1;1];
             
-            [U, S] = lmlra(S3D, size_core);
-        
-            % Reconstruct the low-rank tensor from lmlra factors
-            low_rank_tensor = lmlragen(U, S);
+            % determine the size of the core based off of the singular values a certain
+            % threshold of the singular values compared to the most significant one.
+            for dim = 1:3
+                for i = 2:length(sv{dim})
+                    if sv{dim}(i) > threshold*sv{dim}(1)
+                        R(dim) = R(dim) + 1;
+                    end
+                end
+            end
+            
+            Utrunc{1} = U{1}(:,1:R(1)); % Column space orthogonal base
+            Utrunc{2} = U{2}(:,1:R(2)); % Row-space orthogonal base
+            Utrunc{3} = U{3}(:,1:R(3)); % Fiber-space orthogonal base
+            
+            Ctrunc = C(1:R(1),1:R(2),1:R(3)); % truncated core
+            
+            low_rank_tensor = lmlragen(Utrunc, Ctrunc);
             
             serial3d = desegmentize(low_rank_tensor,'Dims',1:3, 'Method', method);
             
@@ -143,12 +172,27 @@ function predictions = ar_mlsvd(training_series, num_predict, ar_order, reductio
             D3D = decimate(training_series,'Nsamples',[L M],'UseAllSamples',true);
             %disp("Dimension of hankel: "+size(H3D));
         
-            size_core = round([size(D3D, 1), size(D3D, 2), size(D3D, 3)] * reduction)+1;
+            [U, C, sv] = mlsvd(S3D);
+
+            R =[1;1;1];
             
-            [U, S] = lmlra(D3D, size_core);
-        
-            % Reconstruct the low-rank tensor from lmlra factors
-            low_rank_tensor = lmlragen(U, S);
+            % determine the size of the core based off of the singular values a certain
+            % threshold of the singular values compared to the most significant one.
+            for dim = 1:3
+                for i = 2:length(sv{dim})
+                    if sv{dim}(i) > threshold*sv{dim}(1)
+                        R(dim) = R(dim) + 1;
+                    end
+                end
+            end
+            
+            Utrunc{1} = U{1}(:,1:R(1)); % Column space orthogonal base
+            Utrunc{2} = U{2}(:,1:R(2)); % Row-space orthogonal base
+            Utrunc{3} = U{3}(:,1:R(3)); % Fiber-space orthogonal base
+            
+            Ctrunc = C(1:R(1),1:R(2),1:R(3)); % truncated core
+            
+            low_rank_tensor = lmlragen(Utrunc, Ctrunc);
             
             serial3d = dedecimate(low_rank_tensor,'Dims',1:3,'Method', method);
             

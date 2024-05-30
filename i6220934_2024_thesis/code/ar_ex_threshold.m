@@ -1,4 +1,4 @@
-function [best_reduction, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_reduce(signal_params, max_signals, num_experiments, LM_params,optimal_order, reduction_range)
+function [best_threshold, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_threshold(signal_params, max_signals, num_experiments, LM_params,optimal_order, threshold_range)
     addpath('./tensorlab/');
 
     p = inputParser;
@@ -11,14 +11,14 @@ function [best_reduction, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_redu
     num_predict = 1;
     
     % 5 metrics, single model, number of different parameter setups
-    all_errors_gt1_mean = zeros(5, 2, max_signals_param, length(reduction_range));
-    all_errors_gt2_mean = zeros(5, 2, max_signals_param, length(reduction_range));
+    all_errors_gt1_mean = zeros(5, 2, max_signals_param, length(threshold_range));
+    all_errors_gt2_mean = zeros(5, 2, max_signals_param, length(threshold_range));
     
     for sim_param = 1:max_signals_param
-        % Iterate over different reduction values
-        for red_idx = 1:length(reduction_range)
-            fprintf("Testing reduction value: %.1f\n", reduction_range(red_idx));
-            reduction = reduction_range(red_idx);
+        % Iterate over different threshold values
+        for red_idx = 1:length(threshold_range)
+            fprintf("Testing threshold value: %.1f\n", threshold_range(red_idx));
+            threshold = threshold_range(red_idx);
 
             % Number of metrics by number of simulations of different signals for
             % different simulation parameters
@@ -56,9 +56,9 @@ function [best_reduction, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_redu
                         disp("iter " + experiment);
                     end
 
-                    % Generate predictions using ar_mlsvd with current reduction value
+                    % Generate predictions using ar_mlsvd with current threshold value
                     try
-                        predictions_mlsvd(:, experiment) = ar_mlsvd(training_series, num_predict, optimal_order, reduction, 'L', LM_params(1), 'M', LM_params(2));
+                        predictions_mlsvd(:, experiment) = ar_mlsvd(training_series, num_predict, optimal_order, threshold, 'L', LM_params(1), 'M', LM_params(2));
                     catch
                         predictions_mlsvd(:, experiment) = NaN;
                     end
@@ -97,13 +97,13 @@ function [best_reduction, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_redu
     end
     disp("Done!");
 
-    % Select best reduction based on average errors for MLSVD
+    % Select best threshold based on average errors for MLSVD
     % Assuming lower RMSE means better performance
-    best_reduction_idx = zeros(1, max_signals_param);
+    best_threshold_idx = zeros(1, max_signals_param);
     
     for sim_param = 1:max_signals_param
-        [~, best_reduction_idx(sim_param)] = min(squeeze(all_errors_gt1_mean(3, 1, sim_param, :)));
+        [~, best_threshold_idx(sim_param)] = min(squeeze(all_errors_gt1_mean(3, 1, sim_param, :)));
     end
 
-    best_reduction = reduction_range(best_reduction_idx);
+    best_threshold = threshold_range(best_threshold_idx);
 end

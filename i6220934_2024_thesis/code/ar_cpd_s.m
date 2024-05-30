@@ -120,10 +120,6 @@ function predictions = ar_cpd_s(training_series, num_predict, ar_order, cp_order
             predictions = sum(pred_tcomponents, 2);
 
         case 2
-            if mod(length(training_series),2)~=0 && evenSequence
-                training_series = training_series(2:end);
-            end
-
 
             % Decomposition using Segmented Tensor (CPD)
             S3D = segmentize(training_series,3,'Segsize',[L M],'UseAllSamples',true);

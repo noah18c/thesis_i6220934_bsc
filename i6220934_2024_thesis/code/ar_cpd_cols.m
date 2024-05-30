@@ -82,6 +82,8 @@ function predictions = ar_cpd_cols(training_series, num_predict, ar_order, cp_or
         error('M must be a positive integer less than or equal to the length of the training series.');
     end
 
+    
+
     switch embedding
         case 1
             % Decomposition using Hankel Tensor (CPD)
@@ -133,9 +135,6 @@ function predictions = ar_cpd_cols(training_series, num_predict, ar_order, cp_or
             end
 
         case 2
-            if mod(length(training_series),2)~=0 && evenSequence
-                training_series = training_series(2:end);
-            end
 
             % Decomposition using Hankel Tensor (CPD)
             S3D = segmentize(training_series, 3, 'Segsize', [L M], 'UseAllSamples', true);
@@ -194,10 +193,7 @@ function predictions = ar_cpd_cols(training_series, num_predict, ar_order, cp_or
                 hold off;
             end
         case 3
-            if mod(length(training_series),2)~=0 && evenSequence
-                training_series = training_series(2:end);
-            end
-
+            
             % Decomposition using Hankel Tensor (CPD)
             D3D = segmentize(training_series, 3, 'Segsize', [L M], 'UseAllSamples', true);
             %disp("Dimension of hankel: "+size(H3D));

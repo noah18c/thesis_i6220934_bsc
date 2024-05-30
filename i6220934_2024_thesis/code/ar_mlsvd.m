@@ -81,9 +81,10 @@ function predictions = ar_mlsvd(training_series, num_predict, ar_order, reductio
         case 1
             % Approximate the dimensions so that H3D is almost cubic
             H3D = hankelize(training_series, 'Sizes', [L, M]);
-            %disp("Dimension of hankel: "+size(H3D));
+            disp("Dimension of hankel: "+size(H3D));
         
             size_core = round([size(H3D, 1), size(H3D, 2), size(H3D, 3)] * reduction)+1;
+            size_core = [3 3 3];
             
             [U, S] = lmlra(H3D, size_core);
         
@@ -108,9 +109,6 @@ function predictions = ar_mlsvd(training_series, num_predict, ar_order, reductio
             end
 
         case 2
-            if mod(length(training_series),2)~=0 && evenSequence
-                training_series = training_series(2:end);
-            end
 
             % Approximate the dimensions so that S3D is almost cubic
             S3D = segmentize(training_series,3,'Segsize',[L M],'UseAllSamples',true);
@@ -140,9 +138,6 @@ function predictions = ar_mlsvd(training_series, num_predict, ar_order, reductio
                 hold off;
             end
         case 3
-            if mod(length(training_series),2)~=0 && evenSequence
-                training_series = training_series(2:end);
-            end
 
             % Approximate the dimensions so that S3D is almost cubic
             D3D = decimate(training_series,'Nsamples',[L M],'UseAllSamples',true);

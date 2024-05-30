@@ -1,6 +1,6 @@
-function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_mhankel(signal_params, max_signals, num_experiments, optimal_order, num_components, L_range)
+function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_matrix(signal_params, L_range, max_signals, num_experiments, varargin)
     addpath('./tensorlab/');
-    
+
     % parameters for period, amplitude, sampling frequency (Hz), and interval to be tested
     % example signal parameter setup (needs to have exactly 4 columns)
     %{
@@ -15,6 +15,38 @@ function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_mhankel(sign
         10, 100, 1, 200
     ];
     %}
+    
+    % Add default values for optional parameters
+    defaultOptimalOrder = 10;
+    defaultNumComponents = 1;
+    defaultEmbedding = 1;
+    defaultMethod = @mean;
+    
+    % Create an input parser
+    p = inputParser;
+    
+    % Add required parameters
+    addRequired(p, 'signal_params');
+    addRequired(p, 'L_range');
+    addRequired(p, 'max_signals');
+    addRequired(p, 'num_experiments');
+    
+    % Add optional name-value pair parameters
+    addParameter(p, 'optimal_order', defaultOptimalOrder);
+    addParameter(p, 'num_components', defaultNumComponents);
+    addParameter(p, 'embedding', defaultEmbedding);
+    addParameter(p, 'method', defaultMethod);
+    
+    % Parse the inputs
+    parse(p, signal_params, L_range, max_signals, num_experiments, varargin{:});
+    
+    % Assign parsed values to variables
+    optimal_order = p.Results.optimal_order;
+    num_components = p.Results.num_components;
+    embedding = p.Results.embedding;
+    method = p.Results.method;
+    
+    
     
     % Max signals parameter
     max_signals_param = size(signal_params, 1);  % You can adjust this as needed
@@ -69,7 +101,7 @@ function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_mhankel(sign
                     end
 
                     % Generate predictions once
-                    predictions_SVD(:, experiment) = ar_svd(training_series, num_predict, optimal_order, num_components, 'L', L);
+                    predictions_SVD(:, experiment) = ar_svd(training_series, num_predict, optimal_order, num_components, 'L', L,'embedding', embedding,'method', method);
 
                     % Calculate errors for both ground truths
                     for gt = 1:2

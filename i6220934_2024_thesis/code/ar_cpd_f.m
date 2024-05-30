@@ -109,9 +109,6 @@ function predictions = ar_cpd_f(training_series, num_predict, ar_order, cp_order
             end
 
         case 2
-            if mod(length(training_series),2)~=0 && evenSequence
-                training_series = training_series(2:end);
-            end
             
             S3D = segmentize(training_series, 3, 'Segsize', [L M], 'UseAllSamples', true);
         
@@ -139,9 +136,6 @@ function predictions = ar_cpd_f(training_series, num_predict, ar_order, cp_order
                 hold off;
             end
         case 3
-            if mod(length(training_series),2)~=0 && evenSequence
-                training_series = training_series(2:end);
-            end
             
             D3D = decimate(training_series,'Nsamples',[L M],'UseAllSamples',true);
         

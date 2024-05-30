@@ -1,5 +1,6 @@
-function [best_components, all_errors_gt1_mean, all_errors_gt2_mean] = ar_compex(signal_params, max_signals, num_experiments, optimal_order, components_range)
+function [best_components, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_comp(signal_params, max_signals, num_experiments, L, LM_params, optimal_order, components_range)
     addpath('./tensorlab/');
+
     
     % parameters for period, amplitude, sampling frequency (Hz), and interval to be tested
     % example signal parameter setup (needs to have exactly 4 columns)
@@ -41,26 +42,9 @@ function [best_components, all_errors_gt1_mean, all_errors_gt2_mean] = ar_compex
                 disp("Parameter simulation " + sim_param + "/" + max_signals_param);
                 disp("Generated signal " + sim + "/" + max_signals);
                 
-                % Generate sinusoidal signals
-                period = signal_params(sim_param, 1);
-                amp = signal_params(sim_param, 2);
-                dt = signal_params(sim_param, 3);
-                interval = signal_params(sim_param, 4);
-                t = (0:dt:interval)';
-                N = length(t);  % Number of sampling points in the time series
-                
-                % Define base signals without decay and random addition
-                base_signal1 = amp * sin(2 * pi * period * round((rand() * 0.1 + 0.01), 2) * t);
-                base_signal2 = amp * sin(2 * pi * period * round((rand() * 0.1 + 0.01), 2) * t);
-                base_signal3 = amp * sin(2 * pi * period * round((rand() * 0.1 + 0.01), 2) * t);
-                
-                % Apply signal option 3 (decay and random addition)
-                signal1 = base_signal1 .* exp(-0.01 * t) + rand(size(t)) * 10;
-                signal2 = base_signal2 .* exp(-0.01 * t) - rand(size(t)) * 10;
-                signal3 = base_signal3 .* exp(-0.01 * t) + rand(size(t)) * 10;
-                
-                % Combine signals to form the time series
-                time_series = signal1 + signal2 + signal3;
+                time_series = rsignal(signal_params(sim_param, 1), signal_params(sim_param, 2), signal_params(sim_param, 3), signal_params(sim_param, 4));
+
+                N = length(time_series); % Number of sampling points in the time series
 
                 % Ground truth for final point
                 ground_truths1 = time_series(end - num_predict + 1:end); 
@@ -97,13 +81,35 @@ function [best_components, all_errors_gt1_mean, all_errors_gt2_mean] = ar_compex
                         disp("iter " + experiment);
                     end
 
-                    % Generate predictions once
-                    predictions_SVD(:, experiment) = ar_svd(training_series, num_predict, optimal_order, num_components);
-                    predictions_cpd_s(:, experiment) = ar_cpd_s(training_series, num_predict, optimal_order, num_components);
-                    predictions_cpd_f(:, experiment) = ar_cpd_f(training_series, num_predict, optimal_order, num_components);
-                    predictions_cpd_cols(:, experiment) = ar_cpd_cols(training_series, num_predict, optimal_order, num_components);
-                    predictions_cpd_colf(:, experiment) = ar_cpd_colf(training_series, num_predict, 10, num_components);
-
+                    try
+                        predictions_SVD(:, experiment) = ar_svd(training_series, num_predict, optimal_order, num_components, 'L', L);
+                    catch
+                        predictions_SVD(:, experiment) = NaN;
+                    end
+                
+                    try
+                        predictions_cpd_s(:, experiment) = ar_cpd_s(training_series, num_predict, optimal_order, num_components,'L', LM_params(1), 'M', LM_params(2));
+                    catch
+                        predictions_cpd_s(:, experiment) = NaN;
+                    end
+                
+                    try
+                        predictions_cpd_f(:, experiment) = ar_cpd_f(training_series, num_predict, optimal_order, num_components,'L', LM_params(1), 'M', LM_params(2));
+                    catch
+                        predictions_cpd_f(:, experiment) = NaN;
+                    end
+                
+                    try
+                        predictions_cpd_cols(:, experiment) = ar_cpd_cols(training_series, num_predict, optimal_order, num_components,'L', LM_params(1), 'M', LM_params(2));
+                    catch
+                        predictions_cpd_cols(:, experiment) = NaN;
+                    end
+                
+                    try
+                        predictions_cpd_colf(:, experiment) = ar_cpd_colf(training_series, num_predict, 10, num_components,'L', LM_params(1), 'M', LM_params(2));
+                    catch
+                        predictions_cpd_colf(:, experiment) = NaN;
+                    end
                     % Calculate errors for both ground truths
                     for gt = 1:2
                         % Error calculations

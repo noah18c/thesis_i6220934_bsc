@@ -122,10 +122,6 @@ function predictions = ar_cpd_colf(training_series, num_predict, ar_order, cp_or
             end
 
         case 2
-            if mod(length(training_series),2)~=0 && evenSequence
-                training_series = training_series(2:end);
-            end
-
             % Decomposition using Hankel Tensor (CPD)
             S3D = segmentize(training_series, 3, 'Segsize', [L M], 'UseAllSamples', true);
             %disp("Dimension of hankel: "+size(H3D));
@@ -171,9 +167,6 @@ function predictions = ar_cpd_colf(training_series, num_predict, ar_order, cp_or
                 hold off;
             end
         case 3
-            if mod(length(training_series),2)~=0 && evenSequence
-                training_series = training_series(2:end);
-            end
 
             % Decomposition using Hankel Tensor (CPD)
             D3D = decimate(training_series,'Nsamples',[L M],'UseAllSamples',true);

@@ -18,9 +18,10 @@ function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_matrix(signa
     
     % Add default values for optional parameters
     defaultOptimalOrder = 10;
-    defaultNumComponents = 1;
+    defaultThreshold = 1;
     defaultEmbedding = 1;
     defaultMethod = @mean;
+    defaultNoiseParam = 0.1;
     
     % Create an input parser
     p = inputParser;
@@ -33,25 +34,25 @@ function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_matrix(signa
     
     % Add optional name-value pair parameters
     addParameter(p, 'optimal_order', defaultOptimalOrder);
-    addParameter(p, 'num_components', defaultNumComponents);
+    addParameter(p, 'threshold', defaultThreshold);
     addParameter(p, 'embedding', defaultEmbedding);
     addParameter(p, 'method', defaultMethod);
+    addParameter(p, 'noise_param', defaultNoiseParam);
     
     % Parse the inputs
     parse(p, signal_params, L_range, max_signals, num_experiments, varargin{:});
     
     % Assign parsed values to variables
     optimal_order = p.Results.optimal_order;
-    num_components = p.Results.num_components;
+    threshold = p.Results.threshold;
     embedding = p.Results.embedding;
     method = p.Results.method;
-    
+    noise_param = p.Results.noise_param;
     
     
     % Max signals parameter
     max_signals_param = size(signal_params, 1);  % You can adjust this as needed
 
-    noise_option = 1;
     num_predict = 1;
     
     % 5 metrics, 1 model (including actual), number of different parameter setups
@@ -79,7 +80,12 @@ function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_matrix(signa
 
                 % Ground truth for final point
                 ground_truths1 = time_series(end - num_predict + 1:end); 
-                noisy_series = time_series + noise_option * (randn(N, 1) * 0.4);
+
+                % create noise on series proportionate to its range
+                rt = range(time_series);
+                noise = (1-2.*round(rand(N,1))).*(noise_param*rand(N,1)*rt);
+                noisy_series = time_series + noise;
+
                 ground_truths2 = noisy_series(end - num_predict + 1:end);
                 
                 ground_truths = {ground_truths1, ground_truths2};
@@ -101,7 +107,7 @@ function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_matrix(signa
                     end
 
                     % Generate predictions once
-                    predictions_SVD(:, experiment) = ar_svd(training_series, num_predict, optimal_order, num_components, 'L', L,'embedding', embedding,'method', method);
+                    predictions_SVD(:, experiment) = ar_svd(training_series, num_predict, optimal_order, threshold, 'L', L,'embedding', embedding,'method', method);
 
                     % Calculate errors for both ground truths
                     for gt = 1:2

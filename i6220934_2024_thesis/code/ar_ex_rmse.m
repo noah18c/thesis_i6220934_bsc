@@ -1,4 +1,4 @@
-function [all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_rmse(signal_params, max_signals, num_experiments, L, LM_params, num_predict, varargin)
+function [all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_rmse(signal_params, max_signals, num_experiments, LM_params, num_predict, varargin)
     addpath('./tensorlab/');
 
      % parameters for period, amplitude, sampling frequency (Hz), and interval to be tested
@@ -19,9 +19,10 @@ function [all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_rmse(signal_params, 
     % Add default values for optional parameters
     defaultOptimalOrder = 10;
     defaultNumComponents = 1;
-    defaultReduction = 0.2;
+    defaultThreshold = 0.001;
     defaultEmbedding = 1;
     defaultMethod = @mean;
+    defaultNoiseParam = 0.1;
     
     % Create an input parser
     p = inputParser;
@@ -30,30 +31,30 @@ function [all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_rmse(signal_params, 
     addRequired(p, 'signal_params');
     addRequired(p, 'max_signals');
     addRequired(p, 'num_experiments');
+    addRequired(p, 'LM_params');
+    addRequired(p, 'num_predict');
     
     % Add optional name-value pair parameters
     addParameter(p, 'optimal_order', defaultOptimalOrder);
     addParameter(p, 'num_components', defaultNumComponents);
-    addParameter(p, 'reduction', defaultReduction);
+    addParameter(p, 'threshold', defaultThreshold);
     addParameter(p, 'embedding', defaultEmbedding);
     addParameter(p, 'method', defaultMethod);
+    addParameter(p, 'noise_param', defaultNoiseParam);
     
     % Parse the inputs
-    parse(p, signal_params, max_signals, num_experiments, varargin{:});
+    parse(p, signal_params, max_signals, num_experiments, LM_params, num_predict, varargin{:});
     
     % Assign parsed values to variables
     optimal_order = p.Results.optimal_order;
     num_components = p.Results.num_components;
-    reduction = p.Results.reduction;
+    threshold = p.Results.threshold;
     embedding = p.Results.embedding;
     method = p.Results.method;
+    noise_param = p.Results.noise_param;
     
     max_signals_param = size(signal_params, 1);
 
-    % Total number of simulations:
-    % max_signals_param * max_signals * gt * num_experiments
-    noise_option = 1;
-    
     % num_predict, 7 models, number of different parameter setups
     all_errors_gt1_mean = zeros(num_predict, 7, max_signals_param);
     all_errors_gt2_mean = zeros(num_predict, 7, max_signals_param);
@@ -75,7 +76,12 @@ function [all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_rmse(signal_params, 
             
             % Ground truths for final point
             ground_truths1 = time_series(end - num_predict + 1:end); 
-            noisy_series = time_series + noise_option * (randn(N, 1) * 0.4);
+
+            % create noise on series proportionate to its range
+            rt = range(time_series);
+            noise = (1-2.*round(rand(N,1))).*(noise_param*rand(N,1)*rt);
+            noisy_series = time_series + noise;
+
             ground_truths2 = noisy_series(end - num_predict + 1:end);
             
             ground_truths = {ground_truths1, ground_truths2};
@@ -108,33 +114,34 @@ function [all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_rmse(signal_params, 
                 end
 
                 % Generate predictions once
+
                 tic;
                 model_AR = ar(training_series, optimal_order);  % AR(optimal_order) model
                 predictions_AR(:, experiment) = forecast(model_AR, training_series, num_predict);
                 duration_AR(experiment) = toc;
                 
                 tic;
-                predictions_SVD(:, experiment) = ar_svd(training_series, num_predict, optimal_order, num_components, 'L', L, 'embedding', embedding, 'Method', method);
+                predictions_SVD(:, experiment) = ar_svd(training_series, num_predict, optimal_order, threshold(1), 'L', LM_params(1,1), 'embedding', embedding, 'Method', method);
                 duration_SVD(experiment) = toc;
 
                 tic;
-                predictions_cpd_s(:, experiment) = ar_cpd_s(training_series, num_predict, optimal_order, num_components,'L', LM_params(1), 'M', LM_params(2), 'embedding', embedding, 'Method', method);
+                predictions_cpd_s(:, experiment) = ar_cpd_s(training_series, num_predict, optimal_order, num_components(1),'L', LM_params(2,1), 'M', LM_params(2,2), 'embedding', embedding, 'Method', method);
                 duration_cpd_s(experiment) = toc;
 
                 tic;
-                predictions_cpd_f(:, experiment) = ar_cpd_f(training_series, num_predict, optimal_order, num_components, 'L', LM_params(1), 'M', LM_params(2),'embedding', embedding, 'Method', method);
+                predictions_cpd_f(:, experiment) = ar_cpd_f(training_series, num_predict, optimal_order, num_components(2), 'L', LM_params(3,1), 'M', LM_params(3,2),'embedding', embedding, 'Method', method);
                 duration_cpd_f(experiment) = toc;
                 
                 tic;
-                predictions_cpd_cols(:, experiment) = ar_cpd_cols(training_series, num_predict, optimal_order, num_components, 'L', LM_params(1), 'M', LM_params(2),'embedding', embedding, 'Method', method);
+                predictions_cpd_cols(:, experiment) = ar_cpd_cols(training_series, num_predict, optimal_order, num_components(3), 'L', LM_params(4,1), 'M', LM_params(4,2),'embedding', embedding, 'Method', method);
                 duration_cpd_cols(experiment) = toc;
 
                 tic;
-                predictions_cpd_colf(:, experiment) = ar_cpd_colf(training_series, num_predict, 10, num_components,'L', LM_params(1), 'M', LM_params(2), 'embedding', embedding, 'Method', method);
+                predictions_cpd_colf(:, experiment) = ar_cpd_colf(training_series, num_predict, optimal_order, num_components(4),'L', LM_params(5,1), 'M', LM_params(5,2), 'embedding', embedding, 'Method', method);
                 duration_cpd_colf(experiment) = toc;
 
                 tic;
-                predictions_mlsvd(:, experiment) = ar_mlsvd(training_series, num_predict, optimal_order, reduction,'L', LM_params(1), 'M', LM_params(2), 'embedding', embedding, 'Method', method);
+                predictions_mlsvd(:, experiment) = ar_mlsvd(training_series, num_predict, optimal_order, threshold(2),'L', LM_params(6,1), 'M', LM_params(6,2), 'embedding', embedding, 'Method', method);
                 duration_mlsvd(experiment) = toc;
             end   
                    

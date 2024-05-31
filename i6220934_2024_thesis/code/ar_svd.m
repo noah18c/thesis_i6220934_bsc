@@ -1,4 +1,4 @@
-function predictions = ar_svd(training_series, num_predict, ar_order, svd_order, varargin)
+function predictions = ar_svd(training_series, num_predict, ar_order, threshold, varargin)
     % Function to predict future points in a time series using 
     % Singular Value Decomposition (SVD) and Autoregressive (AR) modeling.
     %
@@ -27,7 +27,7 @@ function predictions = ar_svd(training_series, num_predict, ar_order, svd_order,
     addRequired(p, 'training_series', @isnumeric);
     addRequired(p, 'num_predict', @isnumeric);
     addRequired(p, 'ar_order', @isnumeric);
-    addRequired(p, 'svd_order', @isnumeric);
+    addRequired(p, 'threshold', @isnumeric);
 
     % Add optional name-value pair parameters
     addParameter(p, 'plotCompare', defaultPlotCompare, @islogical);
@@ -36,7 +36,7 @@ function predictions = ar_svd(training_series, num_predict, ar_order, svd_order,
     addParameter(p, 'L', [], @isnumeric);
 
     % Parse inputs
-    parse(p, training_series, num_predict, ar_order, svd_order, varargin{:});
+    parse(p, training_series, num_predict, ar_order, threshold, varargin{:});
 
     % Extract values from the input parser
     plotCompare = p.Results.plotCompare;
@@ -67,10 +67,18 @@ function predictions = ar_svd(training_series, num_predict, ar_order, svd_order,
     switch embedding
         case 1
             H2D = hankel(training_series(1:L), training_series(L:end));
-            [U, S, V] = svd(H2D, 'econ');    
+            [U, S, V] = svd(H2D, 'econ');
+            
+            num_components = 1;
+            for i = 2:size(S,1)
+                if S(i,i) > threshold*S(1,1)
+                        num_components = num_components+1;
+                end
+            end
         
-            num_components = svd_order;
             pred_components = zeros(num_predict, num_components);
+
+            
         
             if plotCompare
                 figure;
@@ -115,7 +123,13 @@ function predictions = ar_svd(training_series, num_predict, ar_order, svd_order,
             S2D = segmentize(training_series,2,'Segsize',L,'UseAllSamples',true);
             [U, S, V] = svd(S2D, 'econ');    
         
-            num_components = svd_order;
+            num_components = 1;
+            for i = 2:size(S,1)
+                if S(i,i) > threshold*S(1,1)
+                        num_components = num_components+1;
+                end
+            end
+        
             pred_components = zeros(num_predict, num_components);
         
             if plotCompare
@@ -162,7 +176,13 @@ function predictions = ar_svd(training_series, num_predict, ar_order, svd_order,
             D2D = decimate(training_series,'Nsamples',L,'UseAllSamples',true);
             [U, S, V] = svd(D2D, 'econ');    
         
-            num_components = svd_order;
+            num_components = 1;
+            for i = 2:size(S,1)
+                if S(i,i) > threshold*S(1,1)
+                        num_components = num_components+1;
+                end
+            end
+        
             pred_components = zeros(num_predict, num_components);
         
             if plotCompare

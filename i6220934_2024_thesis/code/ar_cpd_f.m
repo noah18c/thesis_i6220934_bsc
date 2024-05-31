@@ -21,7 +21,6 @@ function predictions = ar_cpd_f(training_series, num_predict, ar_order, cp_order
     % Define default values for optional parameters
     defaultEmbedding = 1; % 1 is Hankel, 2 is segmentation
     defaultPlotCompare = false;
-    defaultEven = false; % true = remove first value of uneven sequences for embedding 2
     defaultMethod = @mean;
 
     % Create an input parser
@@ -38,7 +37,6 @@ function predictions = ar_cpd_f(training_series, num_predict, ar_order, cp_order
     addParameter(p, 'plotCompare', defaultPlotCompare, @islogical);
     addParameter(p, 'L', [], @isnumeric);
     addParameter(p, 'M', [], @isnumeric);
-    addParameter(p, 'even', defaultEven, @islogical);
     addParameter(p, 'Method', defaultMethod);
 
     % Parse inputs initially to get embedding value
@@ -47,7 +45,6 @@ function predictions = ar_cpd_f(training_series, num_predict, ar_order, cp_order
     % Extract values from the input parser
     embedding = p.Results.embedding;
     plotCompare = p.Results.plotCompare;
-    evenSequence = p.Results.even;
     method = p.Results.Method;
 
     % Set default values for L and M based on embedding method
@@ -93,7 +90,15 @@ function predictions = ar_cpd_f(training_series, num_predict, ar_order, cp_order
             % Take average of the anti-diagonal planes
             tensor_series = dehankelize(low_rank_tensor, 'Dims', 1:3, 'Method', method);
 
-            model_tcomp = ar(tensor_series, ar_order);
+            possible_orders = [ar_order,2,1];
+            for i=1:length(possible_orders)
+                try
+                    model_tcomp = ar(tensor_series, possible_orders(i));
+                    break;
+                catch
+                end
+            end
+
             predictions = forecast(model_tcomp, tensor_series, num_predict);
                 
             if plotCompare
@@ -121,7 +126,15 @@ function predictions = ar_cpd_f(training_series, num_predict, ar_order, cp_order
             % Reconstruct time series data
             tensor_series = desegmentize(low_rank_tensor, 'Dims', 1:3,'Method', method);
         
-            model_tcomp = ar(tensor_series, ar_order);
+            possible_orders = [ar_order,2,1];
+            for i=1:length(possible_orders)
+                try
+                    model_tcomp = ar(tensor_series, possible_orders(i));
+                    break;
+                catch
+                end
+            end
+
             predictions = forecast(model_tcomp, tensor_series, num_predict);
                 
             if plotCompare
@@ -148,7 +161,15 @@ function predictions = ar_cpd_f(training_series, num_predict, ar_order, cp_order
             % Reconstruct time series data
             tensor_series = dedecimate(low_rank_tensor, 'Dims', 1:3,'Method', method);
         
-            model_tcomp = ar(tensor_series, ar_order);
+            possible_orders = [ar_order,2,1];
+            for i=1:length(possible_orders)
+                try
+                    model_tcomp = ar(tensor_series, possible_orders(i));
+                    break;
+                catch
+                end
+            end
+
             predictions = forecast(model_tcomp, tensor_series, num_predict);
                 
             if plotCompare

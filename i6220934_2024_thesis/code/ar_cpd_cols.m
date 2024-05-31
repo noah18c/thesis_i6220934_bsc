@@ -23,7 +23,6 @@ function predictions = ar_cpd_cols(training_series, num_predict, ar_order, cp_or
     % Define default values for optional parameters
     defaultEmbedding = 1; % 1 is Hankel, 2 is segmentation
     defaultPlotCompare = false;
-    defaultEven = false; % true = remove first value of uneven sequences for embedding 2
     defaultMethod = @mean;
 
 
@@ -41,7 +40,6 @@ function predictions = ar_cpd_cols(training_series, num_predict, ar_order, cp_or
     addParameter(p, 'plotCompare', defaultPlotCompare, @islogical);
     addParameter(p, 'L', [], @isnumeric);
     addParameter(p, 'M', [], @isnumeric);
-    addParameter(p, 'even', defaultEven, @islogical);
     addParameter(p, 'Method', defaultMethod);
 
     % Parse inputs
@@ -50,7 +48,6 @@ function predictions = ar_cpd_cols(training_series, num_predict, ar_order, cp_or
     % Extract values from the input parser
     embedding = p.Results.embedding;
     plotCompare = p.Results.plotCompare;
-    evenSequence = p.Results.even;
     method = p.Results.Method;
 
     % Set default values for L and M based on embedding method
@@ -103,8 +100,16 @@ function predictions = ar_cpd_cols(training_series, num_predict, ar_order, cp_or
                 a = fac{1}(:, tcomp);
                 b = fac{2}(:, tcomp);
                 c = fac{3}(:, tcomp);
+
+                possible_orders = [ar_order,2,1];
+                for i=1:length(possible_orders)
+                    try
+                        model_tcomp = ar(c, possible_orders(i));
+                        break;
+                    catch
+                    end
+                end
         
-                model_tcomp = ar(c, ar_order);
                 c_predict = forecast(model_tcomp, c, num_predict);
         
                 % Compute the outer product of a, b, and the predicted c values
@@ -153,8 +158,15 @@ function predictions = ar_cpd_cols(training_series, num_predict, ar_order, cp_or
                 a = fac{1}(:, tcomp);
                 b = fac{2}(:, tcomp);
                 c = fac{3}(:, tcomp);
-        
-                model_tcomp = ar(c, ar_order);
+
+                possible_orders = [ar_order,2,1];
+                for i=1:length(possible_orders)
+                    try
+                        model_tcomp = ar(c, possible_orders(i));
+                        break;
+                    catch
+                    end
+                end   
 
                 % due to the way segmentation works, AR needs to predict way less
                 % points than with Hankel. More dependent on already
@@ -211,8 +223,15 @@ function predictions = ar_cpd_cols(training_series, num_predict, ar_order, cp_or
                 a = fac{1}(:, tcomp);
                 b = fac{2}(:, tcomp);
                 c = fac{3}(:, tcomp);
-        
-                model_tcomp = ar(c, ar_order);
+               
+                possible_orders = [ar_order,2,1];
+                for i=1:length(possible_orders)
+                    try
+                        model_tcomp = ar(c, possible_orders(i));
+                        break;
+                    catch
+                    end
+                end 
 
                 % due to the way segmentation works, AR needs to predict way less
                 % points than with Hankel. More dependent on already

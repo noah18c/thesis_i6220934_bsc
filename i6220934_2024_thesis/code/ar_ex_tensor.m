@@ -21,7 +21,6 @@ function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_tensor(signa
     defaultReduction = 0.001;
     defaultEmbedding = 1;
     defaultMethod = @mean;
-    defaultNoiseParam = 0.1;
     
     % Create an input parser
     p = inputParser;
@@ -38,7 +37,6 @@ function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_tensor(signa
     addParameter(p, 'reduction', defaultReduction);
     addParameter(p, 'embedding', defaultEmbedding);
     addParameter(p, 'method', defaultMethod);
-    addParameter(p, 'noise_param', defaultNoiseParam);
     
     % Parse the inputs
     parse(p, signal_params, LM_range, max_signals, num_experiments, varargin{:});
@@ -49,7 +47,6 @@ function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_tensor(signa
     reduction = p.Results.reduction;
     embedding = p.Results.embedding;
     method = p.Results.method;
-    noise_param = p.Results.noise_param;
     
     % Max signals parameter
     max_signals_param = size(signal_params, 1);  % You can adjust this as needed
@@ -76,17 +73,20 @@ function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_tensor(signa
                 disp("Parameter simulation " + sim_param + "/" + max_signals_param);
                 disp("Generated signal " + sim + "/" + max_signals);
 
-                time_series = rsignal(signal_params(sim_param, 1), signal_params(sim_param, 2), signal_params(sim_param, 3), signal_params(sim_param, 4));
+                %this parameter exist such that the learning part is always
+                %of constant length no matter how many predictions you
+                %want.
+                lookout = num_predict - 1;
+                time_series = rsignal(signal_params(sim_param, 1), signal_params(sim_param, 2), signal_params(sim_param, 3), signal_params(sim_param, 4)+lookout);
 
                 N = length(time_series); % Number of sampling points in the time series
 
                 % Ground truth for final point
                 ground_truths1 = time_series(end - num_predict + 1:end); 
-                
+
                 % create noise on series proportionate to its range
-                rt = range(time_series);
-                noise = (1-2.*round(rand(N,1))).*(noise_param*rand(N,1)*rt);
-                noisy_series = time_series + noise;
+                noise_param = signal_params(sim_param,5);
+                noisy_series = noisify(noise_param,N,time_series);
 
                 ground_truths2 = noisy_series(end - num_predict + 1:end);
                 

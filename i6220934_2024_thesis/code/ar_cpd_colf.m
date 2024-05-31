@@ -22,7 +22,6 @@ function predictions = ar_cpd_colf(training_series, num_predict, ar_order, cp_or
     % Define default values for optional parameters
     defaultEmbedding = 1; % 1 is Hankel, 2 is segmentation
     defaultPlotCompare = false;
-    defaultEven = false; % true = remove first value of uneven sequences for embedding 2
     defaultMethod = @mean;
 
 
@@ -40,7 +39,6 @@ function predictions = ar_cpd_colf(training_series, num_predict, ar_order, cp_or
     addParameter(p, 'plotCompare', defaultPlotCompare, @islogical);
     addParameter(p, 'L', [], @isnumeric);
     addParameter(p, 'M', [], @isnumeric);
-    addParameter(p, 'even', defaultEven, @islogical);
     addParameter(p, 'Method', defaultMethod);
 
     % Parse inputs
@@ -49,7 +47,6 @@ function predictions = ar_cpd_colf(training_series, num_predict, ar_order, cp_or
     % Extract values from the input parser
     embedding = p.Results.embedding;
     plotCompare = p.Results.plotCompare;
-    evenSequence = p.Results.even;
     method = p.Results.Method;
 
     % Set default values for L and M based on embedding method
@@ -87,7 +84,6 @@ function predictions = ar_cpd_colf(training_series, num_predict, ar_order, cp_or
             H3D = hankelize(training_series, 'Sizes', [L, M]);
             %disp("Dimension of hankel: "+size(H3D));
         
-        
             % Compute CPD
             R = cp_order; % Number of components
             [fac, ~] = cpd(H3D, R);
@@ -96,9 +92,16 @@ function predictions = ar_cpd_colf(training_series, num_predict, ar_order, cp_or
             a = sum(fac{1},2);
             b = sum(fac{2},2);
             c = sum(fac{3},2);
-        
-            % Predict on c dimension
-            model_tcomp = ar(c, ar_order);
+
+            possible_orders = [ar_order,2,1];
+            for i=1:length(possible_orders)
+                try
+                    model_tcomp = ar(c, possible_orders(i));
+                    break;
+                catch
+                end
+            end
+
             c_predict = forecast(model_tcomp, c, num_predict);
         
             % Compute the outer product of a, b, and the predicted c values
@@ -135,7 +138,14 @@ function predictions = ar_cpd_colf(training_series, num_predict, ar_order, cp_or
             b = sum(fac{2},2);
             c = sum(fac{3},2);
 
-            model_tcomp = ar(c, ar_order);
+            possible_orders = [ar_order,2,1];
+            for i=1:length(possible_orders)
+                try
+                    model_tcomp = ar(c, possible_orders(i));
+                    break;
+                catch
+                end
+            end
 
             % due to the way segmentation works, AR needs to predict way less
             % points than with Hankel. More dependent on already
@@ -181,7 +191,15 @@ function predictions = ar_cpd_colf(training_series, num_predict, ar_order, cp_or
             b = sum(fac{2},2);
             c = sum(fac{3},2);
 
-            model_tcomp = ar(a, ar_order);
+            possible_orders = [ar_order,2,1];
+            for i=1:length(possible_orders)
+                try
+                    model_tcomp = ar(a, possible_orders(i));
+                    break;
+                catch
+                end
+            end
+            
 
             % due to the way segmentation works, AR needs to predict way less
             % points than with Hankel. More dependent on already

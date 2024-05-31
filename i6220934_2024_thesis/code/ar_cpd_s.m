@@ -22,7 +22,6 @@ function predictions = ar_cpd_s(training_series, num_predict, ar_order, cp_order
     % Define default values for optional parameters
     defaultEmbedding = 1; % 1 is Hankel, 2 is segmentation
     defaultPlotCompare = false;
-    defaultEven = false; % true = remove first value of uneven sequences for embedding 2
     defaultMethod = @mean;
 
     % Create an input parser
@@ -39,7 +38,6 @@ function predictions = ar_cpd_s(training_series, num_predict, ar_order, cp_order
     addParameter(p, 'plotCompare', defaultPlotCompare, @islogical);
     addParameter(p, 'L', [], @isnumeric);
     addParameter(p, 'M', [], @isnumeric);
-    addParameter(p, 'even', defaultEven, @islogical);
     addParameter(p, 'Method', defaultMethod);
 
     % Parse inputs initially to get embedding value
@@ -48,7 +46,6 @@ function predictions = ar_cpd_s(training_series, num_predict, ar_order, cp_order
     % Extract values from the input parser
     embedding = p.Results.embedding;
     plotCompare = p.Results.plotCompare;
-    evenSequence = p.Results.even;
     method = p.Results.Method;
 
 
@@ -113,7 +110,16 @@ function predictions = ar_cpd_s(training_series, num_predict, ar_order, cp_order
                     hold off;
                 end
                 
-                model_tcomp = ar(tensor_series, ar_order);
+                possible_orders = [ar_order,2,1];
+                for i=1:length(possible_orders)
+                    try
+                        model_tcomp = ar(tensor_series, possible_orders(i));
+                        break;
+                    catch
+                    end
+                end
+
+
                 pred_tcomponents(:, tcomp) = forecast(model_tcomp, tensor_series, num_predict);
             end
           
@@ -150,8 +156,16 @@ function predictions = ar_cpd_s(training_series, num_predict, ar_order, cp_order
                     ylabel("Value");
                     hold off;
                 end
-                
-                model_tcomp = ar(tensor_series, ar_order);
+
+                possible_orders = [ar_order,2,1];
+                for i=1:length(possible_orders)
+                    try
+                        model_tcomp = ar(tensor_series, possible_orders(i));
+                        break;
+                    catch
+                    end
+                end
+
                 pred_tcomponents(:, tcomp) = forecast(model_tcomp, tensor_series, num_predict);
             end
           
@@ -193,7 +207,15 @@ function predictions = ar_cpd_s(training_series, num_predict, ar_order, cp_order
                     hold off;
                 end
                 
-                model_tcomp = ar(tensor_series, ar_order);
+                possible_orders = [ar_order,2,1];
+                for i=1:length(possible_orders)
+                    try
+                        model_tcomp = ar(tensor_series, possible_orders(i));
+                        break;
+                    catch
+                    end
+                end
+
                 pred_tcomponents(:, tcomp) = forecast(model_tcomp, tensor_series, num_predict);
             end
           

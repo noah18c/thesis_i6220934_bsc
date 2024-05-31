@@ -172,7 +172,7 @@ function predictions = ar_mlsvd(training_series, num_predict, ar_order, threshol
             D3D = decimate(training_series,'Nsamples',[L M],'UseAllSamples',true);
             %disp("Dimension of hankel: "+size(H3D));
         
-            [U, C, sv] = mlsvd(S3D);
+            [U, C, sv] = mlsvd(D3D);
 
             R =[1;1;1];
             

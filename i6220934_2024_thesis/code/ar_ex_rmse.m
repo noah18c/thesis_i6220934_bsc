@@ -57,6 +57,7 @@ function [all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_rmse(signal_params, 
     all_errors_gt2_mean = zeros(num_predict, 7, max_signals_param);
     
     for sim_param = 1:max_signals_param
+        disp("Parameter simulation " + sim_param + "/" + max_signals_param);
         
         % Number of predictions by number of simulations of different signals for
         % different simulation parameters
@@ -64,7 +65,6 @@ function [all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_rmse(signal_params, 
         all_errors_gt2 = zeros(num_predict, 7, max_signals);
     
         for sim = 1:max_signals
-            disp("Parameter simulation " + sim_param + "/" + max_signals_param);
             disp("Generated signal " + sim + "/" + max_signals);
             
             %this parameter exist such that the learning part is always

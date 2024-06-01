@@ -57,6 +57,7 @@ function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_matrix(signa
     all_errors_gt2_mean = zeros(5, 2, max_signals_param, length(L_range));
     
     for sim_param = 1:max_signals_param
+        disp("Parameter simulation " + sim_param + "/" + max_signals_param);
         % Iterate over different values of L
         for L_idx = 1:length(L_range)
             fprintf("Testing L value %d\n", L_range(L_idx));
@@ -68,7 +69,6 @@ function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_matrix(signa
             all_errors_gt2 = zeros(5, 2, max_signals);
         
             for sim = 1:max_signals
-                disp("Parameter simulation " + sim_param + "/" + max_signals_param);
                 disp("Generated signal " + sim + "/" + max_signals);
                 
                 %this parameter exist such that the learning part is always

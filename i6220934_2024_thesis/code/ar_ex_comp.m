@@ -28,6 +28,7 @@ function [best_components, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_com
     all_errors_gt2_mean = zeros(5, 5, max_signals_param, length(components_range));
     
     for sim_param = 1:max_signals_param
+        disp("Parameter simulation " + sim_param + "/" + max_signals_param);
         % Iterate over different values of num_components
         for comp_idx = 1:length(components_range)
             fprintf("Testing %d number of components\n", components_range(comp_idx));
@@ -39,7 +40,6 @@ function [best_components, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_com
             all_errors_gt2 = zeros(5, 5, max_signals);
         
             for sim = 1:max_signals
-                disp("Parameter simulation " + sim_param + "/" + max_signals_param);
                 disp("Generated signal " + sim + "/" + max_signals);
                 
                 %this parameter exist such that the learning part is always
@@ -80,11 +80,13 @@ function [best_components, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_com
                 
                 % Perform the experiment
                 for experiment = 1:num_experiments 
+                    %{
                     if mod(experiment, round(num_experiments / 4)) == 0 && mod(experiment, 2) == 0
                         disp("iter " + experiment);
                     elseif mod(experiment, round(num_experiments / 4)) == 0 || experiment == num_experiments
                         disp("iter " + experiment);
                     end
+                    %}
 
                     try
                         predictions_cpd_s(:, experiment) = ar_cpd_s(training_series, num_predict, optimal_order, num_components,'L', LM_params(2,1), 'M', LM_params(2,2),'embedding', embedding);

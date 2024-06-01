@@ -58,6 +58,7 @@ function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_tensor(signa
     all_errors_gt2_mean = zeros(5, 6, max_signals_param, size(LM_range,1));
     
     for sim_param = 1:max_signals_param
+        disp("Parameter simulation " + sim_param + "/" + max_signals_param);
         % Iterate over different values of L
         for dim_test = 1:size(LM_range,1)
             disp("Testing dimensions values: "+ LM_range(dim_test,1)+"x"+LM_range(dim_test,2)+"x"+LM_range(dim_test,3));
@@ -70,7 +71,6 @@ function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_tensor(signa
             all_errors_gt2 = zeros(5, 6, max_signals);
         
             for sim = 1:max_signals
-                disp("Parameter simulation " + sim_param + "/" + max_signals_param);
                 disp("Generated signal " + sim + "/" + max_signals);
 
                 %this parameter exist such that the learning part is always

@@ -58,6 +58,7 @@ function [all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_perform(signal_param
     all_errors_gt2_mean = zeros(6, 8, max_signals_param);
     
     for sim_param = 1:max_signals_param
+        disp("Parameter simulation " + sim_param + "/" + max_signals_param);
         
         % Number of metrics by number of simulations of different signals for
         % different simulation parameters
@@ -65,7 +66,6 @@ function [all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_perform(signal_param
         all_errors_gt2 = zeros(6, 8, max_signals);
     
         for sim = 1:max_signals
-            disp("Parameter simulation " + sim_param + "/" + max_signals_param);
             disp("Generated signal " + sim + "/" + max_signals);
             
             %this parameter exist such that the learning part is always

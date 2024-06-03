@@ -116,12 +116,14 @@ function predictions = ar_cpd_f(training_series, num_predict, ar_order, cp_order
         case 2
             
             S3D = segmentize(training_series, 3, 'Segsize', [L M], 'UseAllSamples', true);
+
+            size(S3D)
         
             % Compute CPD
             R = cp_order; % Number of components
             [fac, ~] = cpd(S3D, R);
 
-            low_rank_tensor = cpdgen(fac);
+            low_rank_tensor = cpdgen(fac)
         
             % Reconstruct time series data
             tensor_series = desegmentize(low_rank_tensor, 'Dims', 1:3,'Method', method);

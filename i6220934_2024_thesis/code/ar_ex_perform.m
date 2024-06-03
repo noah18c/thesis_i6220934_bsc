@@ -124,11 +124,13 @@ function [all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_perform(signal_param
 
             % Perform the experiment
             for experiment = 1:num_experiments 
+                %{
                 if mod(experiment, round(num_experiments / 4)) == 0 && mod(experiment, 2) == 0
                     disp("iter " + experiment);
                 elseif mod(experiment, round(num_experiments / 4)) == 0 || experiment == num_experiments
                     disp("iter " + experiment);
                 end
+                %}
 
                 % Generate predictions once
                 tic;

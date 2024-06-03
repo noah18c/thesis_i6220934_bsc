@@ -113,12 +113,14 @@ function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_tensor(signa
                 norm_error_mlsvd = zeros(num_predict, num_experiments, 2);
                 
                 % Perform the experiment
-                for experiment = 1:num_experiments                        
+                for experiment = 1:num_experiments         
+                    %{
                     if mod(experiment, round(num_experiments / 4)) == 0 && mod(experiment, 2) == 0
                         disp("iter " + experiment);
                     elseif mod(experiment, round(num_experiments / 4)) == 0 || experiment == num_experiments
                         disp("iter " + experiment);
                     end
+                    %}
 
                     % In case anything goes wrong we use NaN to indicate
                     % that this is not a desirable dimension for the tensor

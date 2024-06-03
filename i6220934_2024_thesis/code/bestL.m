@@ -1,14 +1,10 @@
 function bestL = bestL(vector)
     if size(vector,2) == 1
-        [GcountsL, GroupsL] = groupcounts(vector);
+        median1 = median(vector(:,1));
         
-        most_occurring_value = GroupsL(GcountsL == max(GcountsL));
-        
-        if length(most_occurring_value) > 1
-            bestL = split_tie(most_occurring_value,vector);
-        else
-            bestL = most_occurring_value;
-        end
+        % choose the L value that is closest to the median of the first column
+        [~,index] = min(abs(vector(:,1) - median1));
+        bestL = vector(index);
     else
         error('Input needs to be nx1 vector');
     end

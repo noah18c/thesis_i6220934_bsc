@@ -207,7 +207,7 @@ function predictions = ar_cpd_cols(training_series, num_predict, ar_order, cp_or
         case 3
             
             % Decomposition using Hankel Tensor (CPD)
-            D3D = segmentize(training_series, 3, 'Segsize', [L M], 'UseAllSamples', true);
+            D3D = decimate(training_series, 3, 'Segsize', [L M], 'UseAllSamples', true);
             %disp("Dimension of hankel: "+size(H3D));
         
         
@@ -227,7 +227,7 @@ function predictions = ar_cpd_cols(training_series, num_predict, ar_order, cp_or
                 possible_orders = [ar_order,2,1];
                 for i=1:length(possible_orders)
                     try
-                        model_tcomp = ar(c, possible_orders(i));
+                        model_tcomp = ar(a, possible_orders(i));
                         break;
                     catch
                     end

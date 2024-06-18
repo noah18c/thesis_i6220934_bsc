@@ -204,8 +204,9 @@ function predictions = ar_cpd_cols(training_series, num_predict, ar_order, cp_or
                 hold off;
             end
         case 3
+            
             % Decomposition using Hankel Tensor (CPD)
-            D3D = decimate(training_series,'Nsamples',[L M],'UseAllSamples',true);
+            D3D = decimate(training_series, 3, 'Segsize', [L M], 'UseAllSamples', true);
             %disp("Dimension of hankel: "+size(H3D));
         
         

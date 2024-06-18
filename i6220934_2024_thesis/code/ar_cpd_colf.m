@@ -103,12 +103,13 @@ function predictions = ar_cpd_colf(training_series, num_predict, ar_order, cp_or
             end
 
             c_predict = forecast(model_tcomp, c, num_predict);
-        
+
             % Compute the outer product of a, b, and the predicted c values
-            predictions = zeros(num_predict, 1);
-            for i = 1:num_predict
-                predictions(i) = a(end) * b(end) * c_predict(i);
-            end    
+            predicted_tensor = outprod(a,b,c_predict);
+
+            serialized_predictions = dehankelize(predicted_tensor);
+
+            predictions = serialized_predictions(end-num_predict+1:end);
         
             if plotCompare
                 figure;

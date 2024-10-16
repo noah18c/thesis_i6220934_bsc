@@ -1,4 +1,40 @@
 function [best_components, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_comp(signal_params, max_signals, num_experiments, LM_params, components_range, varargin)
+    % ar_ex_comp Perform experiments to evaluate AR models using tensor decompositions
+    %
+    % This function performs a series of experiments to evaluate autoregressive (AR) 
+    % models that utilize tensor decompositions (CPD and MLSVD) on noisy time-series data.
+    % It computes errors and selects the best number of components for each model.
+    %
+    % Syntax:
+    %   [best_components, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_comp(signal_params, max_signals, num_experiments, LM_params, components_range, varargin)
+    %
+    % Inputs:
+    %   signal_params   - Matrix where each row contains parameters for generating a signal.
+    %   max_signals     - Maximum number of signals to generate for each parameter set.
+    %   num_experiments - Number of experiments to run for each signal.
+    %   LM_params       - Matrix of parameters (L, M) for the decompositions.
+    %   components_range- Vector of component numbers to test for the tensor decompositions.
+    %
+    % Optional Parameters (Name-Value pairs):
+    %   'embedding'     - Type of embedding to use (default is 1).
+    %   'optimal_order' - Optimal order for the AR model (default is 10).
+    %
+    % Outputs:
+    %   best_components       - Structure containing the best number of components for each decomposition method.
+    %   all_errors_gt1_mean   - Mean errors for ground truth 1 (original signal) across all experiments.
+    %   all_errors_gt2_mean   - Mean errors for ground truth 2 (noisy signal) across all experiments.
+    %
+    % Example:
+    %   signal_params = [1, 1, 1, 100, 0.1; 10, 1, 1, 100, 0.1];
+    %   max_signals = 5;
+    %   num_experiments = 10;
+    %   LM_params = [1, 1; 2, 2; 3, 3; 4, 4; 5, 5];
+    %   components_range = 1:5;
+    %   [best_components, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_comp(signal_params, max_signals, num_experiments, LM_params, components_range, 'embedding', 1, 'optimal_order', 10);
+    %
+
+
+
     addpath('./tensorlab/');
 
     p = inputParser;

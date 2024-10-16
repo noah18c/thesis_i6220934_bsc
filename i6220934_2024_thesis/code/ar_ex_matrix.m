@@ -1,4 +1,43 @@
 function [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_matrix(signal_params, L_range, max_signals, num_experiments, varargin)
+    % ar_ex_matrix Perform experiments to evaluate AR models using SVD
+    %
+    % This function performs a series of experiments to evaluate autoregressive (AR) 
+    % models that utilize Singular Value Decomposition (SVD) on noisy time-series data.
+    % It computes errors and selects the best value of L for the model.
+    %
+    % Syntax:
+    %   [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_matrix(signal_params, L_range, max_signals, num_experiments, varargin)
+    %
+    % Inputs:
+    %   signal_params   - Matrix where each row contains parameters for generating a signal.
+    %   L_range         - Vector of L values to test for the SVD decomposition.
+    %   max_signals     - Maximum number of signals to generate for each parameter set.
+    %   num_experiments - Number of experiments to run for each signal.
+    %
+    % Optional Parameters (Name-Value pairs):
+    %   'optimal_order' - Optimal order for the AR model (default is 10).
+    %   'threshold'     - Threshold value for SVD (default is 1).
+    %   'embedding'     - Type of embedding to use (default is 1).
+    %   'method'        - Method for aggregating results (default is @mean).
+    %
+    % Outputs:
+    %   best_L              - Structure containing the best L value for SVD.
+    %   all_errors_gt1_mean - Mean errors for ground truth 1 (original signal) across all experiments.
+    %   all_errors_gt2_mean - Mean errors for ground truth 2 (noisy signal) across all experiments.
+    %
+    % Example:
+    %   signal_params = [
+    %       1, 1, 1, 100;
+    %       10, 1, 1, 100;
+    %       1, 100, 1, 100;
+    %       10, 100, 1, 100;
+    %   ];
+    %   L_range = 1:10;
+    %   max_signals = 5;
+    %   num_experiments = 10;
+    %   [best_L, all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_matrix(signal_params, L_range, max_signals, num_experiments, 'optimal_order', 10, 'threshold', 1, 'embedding', 1, 'method', @mean);
+    %    
+
     addpath('./tensorlab/');
 
     % parameters for period, amplitude, sampling frequency (Hz), and interval to be tested

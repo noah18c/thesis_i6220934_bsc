@@ -1,4 +1,43 @@
 function [all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_perform(signal_params, max_signals, num_experiments, LM_params, varargin)
+    % ar_ex_perform Perform experiments to evaluate AR models using various tensor decompositions
+    %
+    % This function performs a series of experiments to evaluate autoregressive (AR) 
+    % models that utilize Singular Value Decomposition (SVD) and Canonical Polyadic Decomposition (CPD)
+    % on noisy time-series data. It computes errors and evaluates the performance of different models.
+    %
+    % Syntax:
+    %   [all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_perform(signal_params, max_signals, num_experiments, LM_params, varargin)
+    %
+    % Inputs:
+    %   signal_params   - Matrix where each row contains parameters for generating a signal.
+    %   max_signals     - Maximum number of signals to generate for each parameter set.
+    %   num_experiments - Number of experiments to run for each signal.
+    %   LM_params       - Matrix of parameters (L, M) for the decompositions.
+    %
+    % Optional Parameters (Name-Value pairs):
+    %   'optimal_order'  - Optimal order for the AR model (default is 10).
+    %   'num_components' - Number of components for the CPD (default is [1;1;1;1]).
+    %   'threshold'      - Threshold values for SVD and MLSVD (default is [0.001;0.001]).
+    %   'embedding'      - Type of embedding to use (default is 1).
+    %   'method'         - Method for aggregating results (default is @mean).
+    %
+    % Outputs:
+    %   all_errors_gt1_mean - Mean errors for ground truth 1 (original signal) across all experiments.
+    %   all_errors_gt2_mean - Mean errors for ground truth 2 (noisy signal) across all experiments.
+    %
+    % Example:
+    %   signal_params = [
+    %       1, 1, 1, 100;
+    %       10, 1, 1, 100;
+    %       1, 100, 1, 100;
+    %       10, 100, 1, 100;
+    %   ];
+    %   max_signals = 5;
+    %   num_experiments = 10;
+    %   LM_params = [1, 1; 2, 2; 3, 3; 4, 4; 5, 5];
+    %   [all_errors_gt1_mean, all_errors_gt2_mean] = ar_ex_perform(signal_params, max_signals, num_experiments, LM_params, 'optimal_order', 10, 'num_components', [1;1;1;1], 'threshold', [0.001;0.001], 'embedding', 1, 'method', @mean);
+    %
+
     addpath('./tensorlab/');
 
      % parameters for period, amplitude, sampling frequency (Hz), and interval to be tested
